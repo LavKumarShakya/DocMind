@@ -25,5 +25,5 @@ pymupdf>=1.24,<2.0
 # torch is installed separately (CPU/GPU wheel) - see Dockerfile and README.
 sentence-transformers>=3.0,<5.0
 
-# --- Future phases (documented, not yet required at runtime) ---
-# Phase 5 (rerank): sentence-transformers (cross-encoder models)
+# --- LLM providers (Phase 4) ---
+google-genai>=1.0,<2.0

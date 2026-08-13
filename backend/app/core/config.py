@@ -58,6 +58,26 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 150
 
+    # --- Retrieval (Phase 4) ---
+    # Number of semantically similar chunks to retrieve per question.
+    RETRIEVAL_TOP_K: int = 5
+    # Minimum cosine similarity for a chunk to be used as evidence. Cosine
+    # similarity ranges from -1 to 1; 0.65 filters out weak matches.
+    RETRIEVAL_MIN_SIMILARITY: float = 0.65
+    # Maximum characters of evidence text assembled into a single LLM prompt.
+    MAX_CONTEXT_CHARS: int = 8000
+    # Maximum length of a user question accepted by the chat API.
+    MAX_MESSAGE_LENGTH: int = 2000
+
+    # --- LLM (Phase 4) ---
+    # Provider key: "gemini" (Google Gemini, requires GEMINI_API_KEY) or
+    # "local" (offline development provider that answers from the top
+    # retrieved chunk - never used in production).
+    LLM_PROVIDER: str = "gemini"
+    # Default model; overridable via LLM_MODEL for a specific provider.
+    LLM_MODEL: str = "gemini-flash-latest"
+    GEMINI_API_KEY: str = ""
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:

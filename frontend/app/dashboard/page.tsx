@@ -6,7 +6,9 @@ import {
   BookOpen,
   FileText,
   Loader2,
+  MessageSquareText,
   RefreshCw,
+  Send,
   Trash2,
   TriangleAlert,
   Upload,
@@ -18,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { type Citation, askQuestion } from "@/lib/chat";
 import {
   type CampusDocument,
   type DocumentStatus,
@@ -48,6 +51,112 @@ function StatusBadge({ status }: { status: DocumentStatus }) {
     >
       {status === "PROCESSING" ? "Processing" : status.charAt(0) + status.slice(1).toLowerCase()}
     </span>
+  );
+}
+
+function CitationList({
+  citations,
+}: {
+  citations: Citation[];
+}) {
+  if (citations.length === 0) return null;
+  return (
+    <div className="mt-4 border-t border-zinc-100 pt-3">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-400">
+        Sources ({citations.length})
+      </p>
+      <ul className="space-y-1.5">
+        {citations.map((citation) => {
+          const label =
+            citation.section ??
+            (citation.page_number != null ? `p. ${citation.page_number}` : null);
+          return (
+            <li
+              key={citation.chunk_id + citation.chunk_index}
+              className="text-xs text-zinc-600"
+            >
+              <span className="font-medium text-zinc-800">
+                {citation.document_title}
+              </span>
+              {label && <span className="text-zinc-400"> · {label}</span>}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function ChatPanel() {
+  const [question, setQuestion] = useState("");
+  const [asking, setAsking] = useState(false);
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [citations, setCitations] = useState<Citation[]>([]);
+  const [chatError, setChatError] = useState<string | null>(null);
+
+  async function handleAsk(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = question.trim();
+    if (!trimmed || asking) return;
+    setAsking(true);
+    setChatError(null);
+    setAnswer(null);
+    setCitations([]);
+    try {
+      const response = await askQuestion(trimmed);
+      setAnswer(response.answer);
+      setCitations(response.citations);
+    } catch (err) {
+      setChatError(
+        err instanceof ApiError ? err.message : "Unable to get an answer.",
+      );
+    } finally {
+      setAsking(false);
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="flex items-center gap-2">
+        <MessageSquareText className="h-4 w-4 text-zinc-500" aria-hidden />
+        <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+          Ask an academic question
+        </h2>
+      </div>
+      <p className="mt-1 text-sm text-zinc-500">
+        Answers are grounded in the documents you can view.
+      </p>
+
+      <form onSubmit={handleAsk} className="mt-4 flex items-center gap-3">
+        <Input
+          className="flex-1"
+          placeholder="e.g. What is the attendance policy?"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          disabled={asking}
+          maxLength={2000}
+        />
+        <Button type="submit" disabled={!question.trim() || asking} className="self-end">
+          {asking ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <Send className="h-4 w-4" aria-hidden />
+          )}
+          Ask
+        </Button>
+      </form>
+
+      {chatError && <Alert className="mt-4" variant="error">{chatError}</Alert>}
+
+      {answer && (
+        <div className="mt-4 rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-800">
+            {answer.replace(/\s*Sources:\s*\[[\d,\s]+\]\s*$/, "").trim()}
+          </p>
+          <CitationList citations={citations} />
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -224,6 +333,8 @@ function DashboardShell() {
             </div>
           </form>
         </section>
+
+        <ChatPanel />
 
         <section>
           <div className="flex items-center justify-between">

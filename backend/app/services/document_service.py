@@ -112,24 +112,35 @@ def get_manageable_document(db: Session, document_id: uuid.UUID, user: User) -> 
 
 def list_documents(db: Session, user: User) -> list[Document]:
     """Return documents visible to ``user`` (uploaded by them or level-matched)."""
-    owned = Document.uploaded_by == user.id
-    public = Document.access_level == AccessLevel.PUBLIC
-    level_ok = _level_filter(user, Document.access_level)
     return list(
         db.scalars(
             select(Document)
-            .where(owned | public | level_ok)
+            .where(visible_condition(user))
             .order_by(Document.created_at.desc())
         ).all()
     )
 
 
 def _level_filter(user: User, column) -> object:
-    if user.role == Role.STUDENT:
-        return column.in_([AccessLevel.STUDENT, AccessLevel.FACULTY, AccessLevel.ADMIN])
-    if user.role == Role.FACULTY:
-        return column.in_([AccessLevel.FACULTY, AccessLevel.ADMIN])
-    return column == AccessLevel.ADMIN
+    """Access levels a role may view — mirrors ``_is_visible`` exactly.
+
+    A user sees a document when their role rank is >= the document's access
+    level rank. PUBLIC (rank 0) is viewable by every role and is therefore
+    always included in the allowed set.
+    """
+    max_level = _LEVEL_ORDER[user.role]
+    allowed = [level for level, order in _LEVEL_ORDER.items() if order <= max_level]
+    return column.in_(allowed)
+
+
+def visible_condition(user: User) -> object:
+    """SQLAlchemy predicate selecting documents visible to ``user``.
+
+    Used by document listing and by semantic retrieval so permission filtering
+    happens in the database, never in application code. Matches ``_is_visible``.
+    """
+    owned = Document.uploaded_by == user.id
+    return owned | _level_filter(user, Document.access_level)
 
 
 def update_document(db: Session, document: Document, payload: dict) -> Document:

@@ -149,3 +149,32 @@ def fake_embedding_service():
     set_embedding_service(fake)
     yield fake
     set_embedding_service(None)
+
+
+@pytest.fixture(autouse=True)
+def fake_llm_provider():
+    """Replace the shared LLM provider with a deterministic fake.
+
+    Guarantees the test suite never calls a paid/network LLM. The fake answers
+    with the question echoed plus a ``Sources: [1]`` citation so citation
+    mapping is exercised end-to-end. Tests that need specific behaviour can
+    call ``set_llm_provider`` themselves.
+    """
+    from app.services.llm_service import set_llm_provider
+
+    class FakeLLMProvider:
+        name = "fake"
+
+        def __init__(self):
+            self.calls = 0
+            self.questions: list[str] = []
+
+        def answer(self, *, system_prompt: str, question: str) -> str:
+            self.calls += 1
+            self.questions.append(question)
+            return f"Answer about: {question}\n\nSources: [1]"
+
+    fake = FakeLLMProvider()
+    set_llm_provider(fake)
+    yield fake
+    set_llm_provider(None)

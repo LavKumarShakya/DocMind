@@ -9,7 +9,7 @@ rules, circulars, and more). Answers are grounded in the uploaded documents,
 are produced by a Retrieval-Augmented Generation (RAG) pipeline, and include
 structured citations pointing to the source document and page.
 
-> **Status: Phase 3 (Document Ingestion) complete.** This README documents both the
+> **Status: Phase 4 (Basic RAG) complete.** This README documents both the
 > current implementation and the full planned system. Later phases build
 > incrementally on this foundation (see [Development roadmap](#development-roadmap)).
 
@@ -43,14 +43,12 @@ The system is built around a simple, defensible RAG architecture:
 User question
    │
    ▼
-Query processing ──► permission filtering ──► hybrid retrieval (dense + keyword)
+Query processing ──► permission filtering ──► semantic retrieval (pgvector)
    │                                                    │
    │                                                    ▼
-   │                                                 reranking
+   │                                       (Phase 5: BM25 + rerank + confidence)
    │                                                    │
    │                                                    ▼
-   │                                              confidence check
-   │                                                    │
    ▼                                                    ▼
    └────────────────► context builder ──► LLM ──► answer + structured citations
 ```
@@ -59,7 +57,7 @@ Document ingestion follows a separate pipeline:
 
 ```
 Upload ─► validation ─► text extraction ─► cleaning ─► metadata extraction
-   ─► chunking ─► embeddings ─► vector storage (pgvector) ─► keyword indexing
+   ─► chunking ─► embeddings ─► vector storage (pgvector)
    ─► document ACTIVE
 ```
 
@@ -72,8 +70,9 @@ Key design principles:
 - **Provider-agnostic LLM.** The model is behind a service interface so
   Gemini, OpenAI, or another provider can be swapped without touching the RAG
   pipeline.
-- **Transparent retrieval.** Dense and keyword results are combined with
-  configurable weights, then re-ranked by a cross-encoder.
+- **Transparent retrieval.** Dense vector search currently powers retrieval;
+  BM25 keyword results, weighted merging, and cross-encoder reranking arrive
+  in Phase 5.
 
 ---
 
@@ -85,8 +84,8 @@ Key design principles:
 |------------------|----------------------------------------------|----------------|
 | Frontend         | Next.js 15, TypeScript, Tailwind CSS, shadcn/ui | Chat UI, dashboards, document search, admin |
 | API              | FastAPI, Pydantic                            | REST endpoints, validation, auth, RBAC |
-| Services         | Python (SQLAlchemy, domain services)         | Auth, ingestion, retrieval, reranking, RAG, citations, evaluation |
-| RAG core         | sentence-transformers / BGE, pgvector, BM25, cross-encoder | Embeddings, hybrid search, confidence |
+| Services         | Python (SQLAlchemy, domain services)         | Auth, ingestion, retrieval, RAG, citations, evaluation |
+| RAG core         | sentence-transformers / BGE, pgvector         | Embeddings, semantic retrieval (BM25 + reranking in Phase 5) |
 | Data             | PostgreSQL 16 + pgvector, Alembic            | Relational schema, vector search, migrations |
 
 ### Phase 1 scope (implemented)
@@ -106,8 +105,9 @@ Phase 1 delivers the application shell and data foundation:
 - Health checks: API root and `GET /api/health` (verifies DB connectivity).
 - A minimal Next.js landing page that renders live backend health.
 
-Everything beyond Phase 1 (auth, ingestion, retrieval, chat, admin) is
-intentionally **not** built yet. It is laid out in the roadmap below.
+Everything beyond Phase 1 (auth, ingestion, retrieval, chat, admin) builds
+incrementally on this foundation; implemented parts are described in [Features](#features)
+and later phases are laid out in the [roadmap](#development-roadmap).
 
 ---
 
@@ -169,10 +169,47 @@ intentionally **not** built yet. It is laid out in the roadmap below.
   chunking, embedding, DB rows, processing status transitions and the full
   document API.
 
-**Planned (later phases):** semantic + BM25 hybrid retrieval, cross-encoder
-reranking, confidence gating, LLM answer generation with structured
-citations, conversations, feedback, document versioning, role-based document
-access, admin dashboard, search page, and evaluation tooling.
+**Implemented (Phase 4):**
+
+- Semantic retrieval over pgvector (`app/services/retrieval_service.py`): the
+  question is embedded with the same BGE model used for ingestion, then chunks
+  are ranked by cosine distance (`embedding <=> query`) through the HNSW index.
+- Permission filtering happens **in the SQL query** — chunks are joined to
+  documents and filtered by the same visibility rules as the document API
+  (uploader or access-level match). The chat endpoint never filters evidence
+  in application code.
+- Retrieval is configurable: `RETRIEVAL_TOP_K` (default 5) and
+  `RETRIEVAL_MIN_SIMILARITY` (default 0.65) prune weak matches.
+- Context builder (`app/services/context_service.py`) labels each retrieved
+  chunk `[n]` and truncates whole chunks to `MAX_CONTEXT_CHARS` so citation
+  tags always point at fully-included evidence.
+- LLM provider abstraction (`app/services/llm_service.py`): `gemini` (Google
+  Gemini via `google-genai`, default) and `local` (offline development provider
+  that answers from the top chunk — never used in production). Providers are
+  swappable without touching the RAG pipeline.
+- Grounded prompting (`app/rag/prompts.py`): the model is told evidence is
+  data, not instructions (prompt-injection hardening), and must answer with
+  the fixed fallback *"I couldn't find sufficient information in the available
+  university documents."* when evidence is insufficient.
+- Citation mapping (`app/services/citation_service.py`): tags in the model's
+  answer are resolved against the retrieved chunks, producing structured
+  citations (document title, page, section). `section` is surfaced as `null`
+  when the document does not provide one — never fabricated.
+- RAG orchestrator (`app/services/rag_service.py`) with graceful degradation:
+  empty retrieval or an LLM failure returns the grounded fallback instead of
+  an error, keeping the chat API usable during upstream outages.
+- Chat and search endpoints (`POST /api/chat`, `POST /api/search`): answers
+  with citations, plus a developer-facing raw retrieval endpoint.
+- Dashboard chat panel in the authenticated frontend: question input, loading
+  state, rendered answer with a Sources list, and error/empty handling.
+- Backend test suite grown to **107 tests** covering retrieval ranking and
+  permission filtering, context truncation, the local LLM provider, citation
+  mapping, the full RAG pipeline (grounded answer, fallbacks, validation) and
+  the chat/search API.
+
+**Planned (later phases):** BM25 hybrid retrieval, cross-encoder reranking,
+confidence gating, conversations, feedback, document versioning, admin
+dashboard, search page, and evaluation tooling.
 
 ---
 
@@ -215,7 +252,7 @@ Notable compatibility decisions:
 │   │   ├── main.py                 # FastAPI app factory, CORS, handlers, routers
 │   │   ├── api/
 │   │   │   ├── deps.py             # auth deps: get_current_user, require_role
-│   │   │   └── routes/             # health, auth, admin, documents
+│   │   │   └── routes/             # health, auth, admin, documents, chat
 │   │   ├── core/
 │   │   │   ├── config.py           # centralized settings (pydantic-settings)
 │   │   │   ├── enums.py            # Role, DocumentStatus, AccessLevel, MessageRole
@@ -226,16 +263,22 @@ Notable compatibility decisions:
 │   │   │   ├── database.py         # engine, session factory, Base, get_db
 │   │   │   └── models/             # ORM models (users, documents, chunks, ...)
 │   │   ├── rag/
-│   │   │   └── chunking.py         # page-aware chunking (chunk_size/overlap)
+│   │   │   ├── chunking.py         # page-aware chunking (chunk_size/overlap)
+│   │   │   └── prompts.py          # grounded system prompt + fallback
 │   │   ├── schemas/                # Pydantic request/response schemas
 │   │   └── services/
 │   │       ├── auth_service.py     # register_user, authenticate_user
+│   │       ├── citation_service.py # answer tags → structured citations
+│   │       ├── context_service.py  # labelled evidence → context block
 │   │       ├── document_service.py # CRUD, visibility, authorization
 │   │       ├── embedding_service.py# sentence-transformers/BGE, model reuse
 │   │       ├── ingestion_service.py# upload→extract→chunk→embed→ACTIVE
+│   │       ├── llm_service.py      # LLM provider abstraction (gemini/local)
 │   │       ├── pdf_service.py      # validation, page extraction, cleaning
+│   │       ├── rag_service.py      # question → evidence → answer → citations
+│   │       ├── retrieval_service.py# pgvector cosine retrieval + permissions
 │   │       └── storage_service.py  # local file storage (replaceable)
-│   ├── tests/                      # backend tests (auth, RBAC, documents; 73 passing)
+│   ├── tests/                      # backend tests (auth, RBAC, docs, RAG; 107 passing)
 │   ├── alembic/                    # migration env + versions/
 │   ├── alembic.ini
 │   ├── requirements.txt
@@ -259,9 +302,8 @@ Notable compatibility decisions:
 Planned backend modules (created in their phases, not present yet):
 
 ```
-app/services/        retrieval_service, reranking_service, rag_service,
-                     citation_service, evaluation_service
-app/rag/             embeddings, hybrid_search, reranker, prompts, confidence
+app/services/        reranking_service, evaluation_service
+app/rag/             embeddings, hybrid_search, reranker, confidence
 app/db/repositories/ data-access layer
 ```
 
@@ -293,7 +335,10 @@ cp frontend/.env.example frontend/.env.local
 ```
 
 The defaults are safe for local development. In production you must change at
-minimum `POSTGRES_PASSWORD`, `SECRET_KEY`, and `CORS_ORIGINS`.
+minimum `POSTGRES_PASSWORD`, `SECRET_KEY`, and `CORS_ORIGINS`. To enable the
+Gemini-backed chat endpoint, set `GEMINI_API_KEY` in the root `.env` (read by
+`docker-compose`) or in `backend/.env` (local backend). Without it, set
+`LLM_PROVIDER=local` for an offline development answerer.
 
 ### Key variables
 
@@ -311,6 +356,13 @@ minimum `POSTGRES_PASSWORD`, `SECRET_KEY`, and `CORS_ORIGINS`.
 | `STORAGE_DIR` | Local document storage root (replaceable storage layer). |
 | `MAX_UPLOAD_SIZE_BYTES` | Maximum accepted PDF upload size (20 MiB default). |
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | Character-based chunking parameters. |
+| `RETRIEVAL_TOP_K` | Number of semantically similar chunks retrieved per question (default 5). |
+| `RETRIEVAL_MIN_SIMILARITY` | Minimum cosine similarity for a chunk to count as evidence (default 0.65). |
+| `MAX_CONTEXT_CHARS` | Maximum evidence characters assembled into the LLM prompt (default 8000). |
+| `MAX_MESSAGE_LENGTH` | Maximum length of a chat question (default 2000). |
+| `LLM_PROVIDER` | `gemini` (default, needs `GEMINI_API_KEY`) or `local` (offline dev only). |
+| `LLM_MODEL` | Model name for the configured provider (default `gemini-flash-latest`). |
+| `GEMINI_API_KEY` | Google Gemini API key. **Never commit a real key.** |
 | `NEXT_PUBLIC_API_URL` | Backend base URL baked into the frontend build (public, not a secret). |
 
 ---
@@ -428,9 +480,11 @@ pip install -r requirements-dev.txt     # pytest + httpx
 python -m pytest app/tests -q
 ```
 
-Current suite: **73 tests** covering authentication, RBAC, document
+Current suite: **107 tests** covering authentication, RBAC, document
 validation/upload, extraction, chunking, embeddings, processing status
-transitions and the full document API.
+transitions, the full document API, and the Phase 4 RAG pipeline (retrieval
+ranking + permission filtering, context assembly, LLM provider, citations,
+chat/search API).
 
 ---
 
@@ -452,7 +506,8 @@ backend. Endpoints planned across the project:
 | PATCH | `/api/documents/{id}` | Edit metadata *(implemented, Phase 3)* |
 | DELETE | `/api/documents/{id}` | Delete document *(implemented, Phase 3)* |
 | POST | `/api/documents/{id}/process` | Trigger ingestion *(implemented, Phase 3)* |
-| POST | `/api/chat` | Ask a question (RAG) |
+| POST | `/api/chat` | Ask a grounded question (RAG) *(implemented, Phase 4)* |
+| POST | `/api/search` | Raw semantic search, no LLM *(implemented, Phase 4)* |
 | GET  | `/api/conversations` | List conversations |
 | GET  | `/api/conversations/{id}` | Conversation detail |
 | DELETE | `/api/conversations/{id}` | Delete conversation |
@@ -517,30 +572,54 @@ Document error codes: `DOCUMENT_NOT_FOUND`, `FORBIDDEN`,
 `INVALID_DOCUMENT_TYPE`, `EMPTY_DOCUMENT`, `DOCUMENT_TOO_LARGE`,
 `DOCUMENT_PROCESSING_FAILED`.
 
+### Chat & search (Phase 4)
+
+Both endpoints require authentication and are permission-aware server-side.
+
+- `POST /api/chat` — body `{"message": "<question>"}`. Runs the RAG pipeline
+  over the documents the user can see and returns `{answer, citations}`.
+  When no evidence meets `RETRIEVAL_MIN_SIMILARITY`, or the LLM fails, the
+  answer is the fixed grounded fallback:
+  *"I couldn't find sufficient information in the available university
+  documents."* Citations resolve the model's source tags to actual retrieved
+  chunks; `section` is `null` when the document does not provide one.
+- `POST /api/search` — body `{"query": "..."}`. Developer/debug endpoint that
+  returns raw retrieval results (`{results: [...]}`) without calling an LLM.
+- Chat error codes: `MESSAGE_EMPTY`, `MESSAGE_TOO_LONG`.
+
+The LLM provider is selected by `LLM_PROVIDER`:
+`gemini` (default; requires `GEMINI_API_KEY`, model `LLM_MODEL`) or `local`
+(offline development provider — answers verbatim from the top chunk, never for
+production).
+
 ---
 
 ## RAG pipeline
 
-Planned implementation (Phases 4–7). Chunk text and embeddings are already
-stored in pgvector by Phase 3; the retrieval layer is not built yet.
+Phase 4 implements **semantic (vector-only) retrieval → context → LLM →
+citations**. The pipeline runs entirely server-side; permission filtering is
+part of the retrieval query, never frontend filtering.
 
-1. **Query processing** — normalize the question; optionally rewrite using
-   conversation context, only when necessary.
-2. **Permission filtering** — restrict retrievable documents to the user's
-   role *in the query before it hits retrieval* (backend only).
-3. **Hybrid retrieval** — retrieve ~20 candidates:
-   - *Dense:* BGE embeddings via pgvector (HNSW, cosine).
-   - *Sparse:* BM25-compatible keyword search.
-   - Merge with configurable weights (`dense_weight`, `keyword_weight`).
-4. **Reranking** — cross-encoder scores the ~20 candidates; keep top
-   `TOP_K_CONTEXT` chunks.
-5. **Confidence check** — if evidence is weak, answer with *"I couldn't find
-   sufficient information in the available university documents."* instead of
-   guessing. Threshold is configurable.
-6. **Context builder** — assemble only the winning chunks with their metadata
-   (title, version, page, section).
-7. **LLM generation** — a provider-agnostic client (Gemini / OpenAI / local)
-   answers strictly from the supplied context, citing sources.
+1. **Query processing** — the question is embedded with the same BGE model
+   used for ingestion (`EMBEDDING_MODEL`).
+2. **Permission filtering** — chunks are retrieved only from documents the
+   user can see (uploader or access-level match). The filter is applied in the
+   SQL `WHERE` clause *before* ranking.
+3. **Dense retrieval** — top `RETRIEVAL_TOP_K` chunks by cosine distance
+   (`embedding <=> query`) via the HNSW index; chunks below
+   `RETRIEVAL_MIN_SIMILARITY` are discarded.
+4. **Context builder** — winning chunks are labelled `[1]…[n]` and assembled,
+   truncating whole chunks to `MAX_CONTEXT_CHARS`.
+5. **LLM generation** — a provider-agnostic client (Gemini default, `local`
+   offline for development) answers strictly from the supplied context and is
+   explicitly told to ignore any instructions embedded in the evidence
+   (prompt-injection hardening). With insufficient evidence it returns the
+   fixed grounded fallback.
+6. **Citations** — source tags in the answer are resolved against the
+   retrieved chunks into structured citations.
+
+Planned (Phases 5–7): BM25 keyword retrieval and hybrid merging, cross-encoder
+reranking, confidence gating, and evaluation tooling.
 
 Example citation payload returned by the API:
 
@@ -582,8 +661,8 @@ measured.
 | 1 | Foundation: repo, Docker, PostgreSQL+pgvector, FastAPI, Next.js, models, Alembic, health checks | ✅ Done |
 | 2 | Authentication: register, login, JWT, password hashing, roles, protected routes | ✅ Done |
 | 3 | Document ingestion: PDF upload, extraction, page tracking, chunking, embeddings, pgvector storage | ✅ Done |
-| 4 | Basic RAG: semantic retrieval, context building, LLM integration, answers, citations | ⏳ Next |
-| 5 | Advanced retrieval: BM25, hybrid ranking, cross-encoder reranking, confidence threshold | |
+| 4 | Basic RAG: semantic retrieval, context building, LLM integration, answers, citations | ✅ Done |
+| 5 | Advanced retrieval: BM25, hybrid ranking, cross-encoder reranking, confidence threshold | ⏳ Next |
 | 6 | Product features: conversations, feedback, versioning, role-based access, admin, search | |
 | 7 | Evaluation: dataset, retrieval metrics, RAG metrics, report | |
 | 8 | Polish: error handling, tests, loading/empty states, responsive UI, docs | |
