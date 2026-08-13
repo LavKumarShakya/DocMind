@@ -20,6 +20,8 @@ class CitationResponse(BaseModel):
     page_number: int | None
     section: str | None
     chunk_index: int
+    # Final cross-encoder reranker relevance score (0..1), when available.
+    relevance_score: float | None = None
 
 
 class ChatResponse(BaseModel):
@@ -39,7 +41,18 @@ class SearchResult(BaseModel):
     section: str | None
     chunk_index: int
     text: str
-    score: float
+    # Legacy alias kept for Phase 4 compatibility; equals dense_score when the
+    # candidate came from the dense stage, otherwise None.
+    score: float | None = None
+    # Phase 5 per-stage scores. Semantics:
+    #   dense_score  - cosine similarity from pgvector (0..1).
+    #   bm25_score   - normalized PostgreSQL FTS rank (0..1 after min-max).
+    #   hybrid_score - weighted fusion of normalized scores (0..1).
+    #   rerank_score - cross-encoder relevance, sigmoid of the logit (0..1).
+    dense_score: float | None = None
+    bm25_score: float | None = None
+    hybrid_score: float | None = None
+    rerank_score: float | None = None
 
 
 class SearchResponse(BaseModel):

@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from app.services.retrieval_service import RetrievedChunk
+from app.services.retrieval_types import RetrievalCandidate
 
 _TAG_RE = re.compile(r"\[\s*(\d+)\s*\]")
 
@@ -26,6 +26,7 @@ class Citation:
     page_number: int | None
     section: str | None
     chunk_index: int
+    relevance_score: float | None = None
 
 
 def extract_tags(answer: str) -> list[int]:
@@ -41,12 +42,13 @@ def extract_tags(answer: str) -> list[int]:
 
 
 def build_citations(
-    answer: str, results: list[RetrievedChunk]
+    answer: str, results: list[RetrievalCandidate]
 ) -> list[Citation]:
     """Map cited tags to their retrieval results.
 
     Tags are 1-based indexes into ``results``. Unknown tags (the model citing
-    evidence that does not exist) are ignored.
+    evidence that does not exist) are ignored. The citation carries the final
+    reranker relevance score (0..1) for display purposes.
     """
     by_index = {index + 1: chunk for index, chunk in enumerate(results)}
     citations: list[Citation] = []
@@ -62,6 +64,7 @@ def build_citations(
                 page_number=chunk.page_number,
                 section=chunk.section,
                 chunk_index=chunk.chunk_index,
+                relevance_score=getattr(chunk, "rerank_score", None),
             )
         )
     return citations

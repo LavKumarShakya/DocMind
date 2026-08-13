@@ -14,7 +14,7 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -68,6 +68,26 @@ class Settings(BaseSettings):
     MAX_CONTEXT_CHARS: int = 8000
     # Maximum length of a user question accepted by the chat API.
     MAX_MESSAGE_LENGTH: int = 2000
+
+    # --- Hybrid retrieval (Phase 5) ---
+    # Dense (pgvector) and BM25 (PostgreSQL FTS) candidate pool sizes. Each
+    # retriever returns only its own top-K; the pools are merged by chunk id,
+    # so deduplication never feeds thousands of chunks into the reranker.
+    DENSE_CANDIDATE_K: int = 20
+    BM25_CANDIDATE_K: int = 20
+    # Number of fused candidates handed to the cross-encoder reranker.
+    RERANK_TOP_K: int = 8
+    # Weights for the normalized score fusion. Must sum to ~1.
+    HYBRID_DENSE_WEIGHT: float = 0.6
+    HYBRID_BM25_WEIGHT: float = 0.4
+    # Cross-encoder reranker model (sentence-transformers).
+    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # Batch size for cross-encoder inference.
+    RERANKER_BATCH_SIZE: int = 8
+    # Retrieval confidence gate: a query is only answered when the top
+    # reranker relevance score (sigmoid-transformed, 0..1) meets this
+    # threshold. Development heuristic; tune after inspecting real scores.
+    CONFIDENCE_THRESHOLD: float = 0.35
 
     # --- LLM (Phase 4) ---
     # Provider key: "gemini" (Google Gemini, requires GEMINI_API_KEY) or

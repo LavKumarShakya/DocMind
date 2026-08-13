@@ -1,16 +1,23 @@
 """RAG orchestrator: question → evidence → grounded answer → citations.
 
 Pipeline (all server-side, permission-aware):
-  1. Embed the question with the same embedding model used for ingestion.
-  2. Retrieve the top-K similar chunks from pgvector, restricted to documents
-     the user can see.
+  1. Hybrid retrieval (Phase 5): dense pgvector + BM25 keyword candidates are
+     merged, normalized, fused and re-ranked by a cross-encoder; all filtering
+     happens in SQL so only documents visible to the user are considered.
+  2. Confidence gate: if the strongest evidence does not clear
+     CONFIDENCE_THRESHOLD, the fixed fallback answer is returned and the LLM
+     is never called.
   3. Assemble a labelled context block (bounded by MAX_CONTEXT_CHARS).
   4. Ask the LLM provider to answer strictly from that evidence.
   5. Map the answer's citation tags back to retrieved chunks (citation_service).
 
-Failure handling is graceful: an empty retrieval or an LLM failure yields the
-fixed grounded fallback answer rather than an error, so the chat API stays
-useful even while an upstream provider is flaky.
+Failure handling is graceful: an empty retrieval, weak evidence or an LLM
+failure yields the fixed grounded fallback answer rather than an error, so the
+chat API stays useful even while an upstream provider is flaky.
+
+The ``retrieval_service`` argument is preserved for compatibility: it is used
+as the *dense* stage inside the hybrid pipeline, so tests can inject a
+deterministic fake while BM25 still runs against the real database.
 """
 
 from __future__ import annotations
@@ -23,10 +30,12 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.errors import ApiError
 from app.db.models import User
+from app.rag.confidence import is_confident
 from app.rag.prompts import FALLBACK_ANSWER, build_system_prompt
 from app.services import citation_service, context_service
+from app.services.hybrid_retrieval_service import HybridRetrievalService
 from app.services.llm_service import LLMProviderError, get_llm_provider
-from app.services.retrieval_service import RetrievedChunk, RetrievalService
+from app.services.retrieval_types import RetrievalCandidate
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +53,7 @@ def answer_question(
     *,
     question: str,
     user: User,
-    retrieval_service: RetrievalService | None = None,
+    retrieval_service=None,
     llm_provider=None,
 ) -> RagResult:
     """Answer ``question`` for ``user`` from their visible documents."""
@@ -57,14 +66,11 @@ def answer_question(
     if not question.strip():
         raise ApiError("MESSAGE_EMPTY", "Message must not be empty.", status_code=422)
 
-    svc = retrieval_service or RetrievalService()
-    query_embedding = svc.embed_query(question)
-    results = svc.retrieve(
-        db, query_embedding=query_embedding, user=user
-    )
+    results = _retrieve(db, question, user, retrieval_service)
 
-    if not results:
-        logger.info("No evidence retrieved for question; returning grounded fallback")
+    if not results or not is_confident(results):
+        reason = "no evidence" if not results else "evidence below confidence threshold"
+        logger.info("Not answering question (%s); returning grounded fallback", reason)
         return RagResult(answer=FALLBACK_ANSWER)
 
     context = context_service.build_context(results)
@@ -82,14 +88,19 @@ def answer_question(
     return RagResult(answer=answer, citations=citations)
 
 
+def _retrieve(db: Session, question: str, user: User, retrieval_service=None) -> list[RetrievalCandidate]:
+    """Run hybrid retrieval; ``retrieval_service`` fills the dense stage."""
+    dense = retrieval_service
+    pipeline = HybridRetrievalService(dense_service=dense)
+    return pipeline.retrieve(db, query=question, user=user)
+
+
 def search_documents(
     db: Session,
     *,
     query: str,
     user: User,
-    retrieval_service: RetrievalService | None = None,
-) -> list[RetrievedChunk]:
-    """Developer-facing semantic search (no LLM); used by /api/search."""
-    svc = retrieval_service or RetrievalService()
-    query_embedding = svc.embed_query(query)
-    return svc.retrieve(db, query_embedding=query_embedding, user=user)
+    retrieval_service=None,
+) -> list[RetrievalCandidate]:
+    """Developer-facing hybrid search (no LLM); used by /api/search."""
+    return _retrieve(db, query, user, retrieval_service)

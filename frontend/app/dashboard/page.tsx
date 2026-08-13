@@ -70,6 +70,10 @@ function CitationList({
           const label =
             citation.section ??
             (citation.page_number != null ? `p. ${citation.page_number}` : null);
+          const relevance =
+            citation.relevance_score != null
+              ? `Relevance: ${citation.relevance_score.toFixed(2)}`
+              : null;
           return (
             <li
               key={citation.chunk_id + citation.chunk_index}
@@ -79,6 +83,7 @@ function CitationList({
                 {citation.document_title}
               </span>
               {label && <span className="text-zinc-400"> · {label}</span>}
+              {relevance && <span className="text-indigo-600"> · {relevance}</span>}
             </li>
           );
         })}

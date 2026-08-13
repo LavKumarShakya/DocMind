@@ -9,13 +9,13 @@ evidence.
 from __future__ import annotations
 
 from app.core.config import settings
-from app.services.retrieval_service import RetrievedChunk
+from app.services.retrieval_types import RetrievalCandidate
 
 TAG = "[{index}] {text}"
 
 
-def build_context(results: list[RetrievedChunk], *, max_chars: int | None = None) -> str:
-    """Build a labelled context block from retrieved chunks, newest-score first.
+def build_context(results: list[RetrievalCandidate], *, max_chars: int | None = None) -> str:
+    """Build a labelled context block from retrieved chunks, best-first.
 
     Returns the rendered context string. Chunks beyond ``max_chars`` are
     dropped whole from the tail; tags always stay consistent with the chunks

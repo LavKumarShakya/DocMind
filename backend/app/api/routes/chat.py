@@ -1,4 +1,4 @@
-"""Chat and semantic-search endpoints (Phase 4 RAG)."""
+"""Chat and semantic-search endpoints (Phase 4 RAG + Phase 5 hybrid retrieval)."""
 
 from __future__ import annotations
 
@@ -38,7 +38,8 @@ def chat(
     """Run the RAG pipeline and return a grounded answer with citations.
 
     Answers are restricted to documents visible to ``current_user``. When no
-    sufficient evidence is found, a fixed fallback answer is returned.
+    sufficient evidence is found (empty retrieval or evidence below the
+    confidence threshold), a fixed fallback answer is returned.
     """
     result = rag_service.answer_question(
         db, question=payload.message, user=current_user
@@ -51,30 +52,38 @@ def chat(
     )
 
 
+def _search_result(candidate) -> SearchResult:
+    """Map a retrieval candidate onto the debug payload, exposing stage scores."""
+    return SearchResult(
+        chunk_id=str(candidate.chunk_id),
+        document_id=str(candidate.document_id),
+        document_title=candidate.document_title,
+        page_number=candidate.page_number,
+        section=candidate.section,
+        chunk_index=candidate.chunk_index,
+        text=candidate.text,
+        score=candidate.dense_score,
+        dense_score=candidate.dense_score,
+        bm25_score=candidate.bm25_score,
+        hybrid_score=candidate.hybrid_score,
+        rerank_score=candidate.rerank_score,
+    )
+
+
 @router.post(
     "/search",
     response_model=SearchResponse,
-    summary="Semantic search (no LLM) - developer/debug endpoint",
+    summary="Hybrid search (no LLM) - developer/debug endpoint",
 )
 def search(
     payload: SearchRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> SearchResponse:
-    """Return raw retrieval results for a query without calling an LLM."""
+    """Return raw hybrid retrieval results for a query without calling an LLM.
+
+    Each result exposes the per-stage scores: dense_score, bm25_score,
+    hybrid_score and rerank_score (see SearchResult for exact semantics).
+    """
     results = rag_service.search_documents(db, query=payload.query, user=current_user)
-    return SearchResponse(
-        results=[
-            SearchResult(
-                chunk_id=str(r.chunk_id),
-                document_id=str(r.document_id),
-                document_title=r.document_title,
-                page_number=r.page_number,
-                section=r.section,
-                chunk_index=r.chunk_index,
-                text=r.text,
-                score=r.score,
-            )
-            for r in results
-        ]
-    )
+    return SearchResponse(results=[_search_result(r) for r in results])

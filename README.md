@@ -9,8 +9,8 @@ rules, circulars, and more). Answers are grounded in the uploaded documents,
 are produced by a Retrieval-Augmented Generation (RAG) pipeline, and include
 structured citations pointing to the source document and page.
 
-> **Status: Phase 4 (Basic RAG) complete.** This README documents both the
-> current implementation and the full planned system. Later phases build
+> **Status: Phase 5 (Advanced Retrieval) complete.** This README documents both
+> the current implementation and the full planned system. Later phases build
 > incrementally on this foundation (see [Development roadmap](#development-roadmap)).
 
 ---
@@ -43,13 +43,16 @@ The system is built around a simple, defensible RAG architecture:
 User question
    │
    ▼
-Query processing ──► permission filtering ──► semantic retrieval (pgvector)
-   │                                                    │
-   │                                                    ▼
-   │                                       (Phase 5: BM25 + rerank + confidence)
-   │                                                    │
-   │                                                    ▼
-   ▼                                                    ▼
+Query processing ──► permission filtering ──► dense retrieval (pgvector)
+   │                              │               └─► BM25 retrieval (PostgreSQL FTS)
+   │                              ▼
+   │                     hybrid fusion (normalize + weight)
+   │                              ▼
+   │                     cross-encoder reranking
+   │                              ▼
+   │                     confidence gate ──► fallback answer (weak evidence)
+   │                              │
+   ▼                              ▼
    └────────────────► context builder ──► LLM ──► answer + structured citations
 ```
 
@@ -70,9 +73,10 @@ Key design principles:
 - **Provider-agnostic LLM.** The model is behind a service interface so
   Gemini, OpenAI, or another provider can be swapped without touching the RAG
   pipeline.
-- **Transparent retrieval.** Dense vector search currently powers retrieval;
-  BM25 keyword results, weighted merging, and cross-encoder reranking arrive
-  in Phase 5.
+- **Transparent retrieval.** Retrieval is hybrid: dense vector search over
+  pgvector plus BM25 keyword search over PostgreSQL full-text search, fused
+  with weighted scores and re-ranked by a cross-encoder, then gated on
+  confidence before the LLM is called.
 
 ---
 
@@ -207,8 +211,39 @@ and later phases are laid out in the [roadmap](#development-roadmap).
   mapping, the full RAG pipeline (grounded answer, fallbacks, validation) and
   the chat/search API.
 
-**Planned (later phases):** BM25 hybrid retrieval, cross-encoder reranking,
-confidence gating, conversations, feedback, document versioning, admin
+**Implemented (Phase 5):**
+
+- **BM25 keyword retrieval** (`app/services/bm25_service.py`): PostgreSQL
+  full-text search ranks chunks with `ts_rank_cd` over a generated `tsvector`
+  column on `document_chunks` (`searchable_content`, backed by a GIN index).
+  Course codes, regulation numbers and orphaned keywords are matched that pure
+  vectors miss. Permission filtering is part of the SQL `WHERE` clause, exactly
+  like the dense stage.
+- **Hybrid fusion** (`app/services/hybrid_retrieval_service.py`): dense and
+  BM25 pools (each `DENSE_CANDIDATE_K` / `BM25_CANDIDATE_K` = 20) are merged
+  and deduplicated by chunk id, min-max normalized, then fused with
+  `HYBRID_DENSE_WEIGHT` / `HYBRID_BM25_WEIGHT` into `hybrid_score`. The top
+  `RERANK_TOP_K` (= 8) fused candidates go to the re-ranker — never thousands
+  of chunks.
+- **Cross-encoder reranking** (`app/services/reranking_service.py`):
+  `cross-encoder/ms-marco-MiniLM-L-6-v2` (sentence-transformers) re-scores the
+  top fused candidates against the question. Raw logits are sigmoid-transformed
+  to a 0..1 `rerank_score`. The model is a lazy singleton loaded once per
+  process, and inference is batched (`RERANKER_BATCH_SIZE`).
+- **Confidence gating** (`app/rag/confidence.py`): the LLM is only called when
+  the best evidence clears `CONFIDENCE_THRESHOLD`. Weak or empty evidence
+  returns the grounded fallback without invoking the LLM.
+- **Citations carry relevance**: each citation exposes `relevance_score`, the
+  final reranker score for that source.
+- **Graceful degradation**: if BM25 fails the pipeline falls back to dense, if
+  dense fails it falls back to BM25, and if the reranker is unavailable the
+  hybrid-fused order is used instead of erroring.
+- Backend test suite grown to **137 tests** covering BM25 ranking/permissions,
+  score normalization, fusion weights, dedupe, reranker ordering and metadata
+  preservation, confidence thresholds, hybrid E2E, and permissive/restrictive
+  permission paths.
+
+**Planned (later phases):** conversations, feedback, document versioning, admin
 dashboard, search page, and evaluation tooling.
 
 ---
@@ -264,21 +299,27 @@ Notable compatibility decisions:
 │   │   │   └── models/             # ORM models (users, documents, chunks, ...)
 │   │   ├── rag/
 │   │   │   ├── chunking.py         # page-aware chunking (chunk_size/overlap)
-│   │   │   └── prompts.py          # grounded system prompt + fallback
+│   │   │   ├── confidence.py       # retrieval confidence gate (Phase 5)
+│   │   │   ├── prompts.py          # grounded system prompt + fallback
+│   │   │   └── score_normalization.py # min-max score normalization (Phase 5)
 │   │   ├── schemas/                # Pydantic request/response schemas
 │   │   └── services/
 │   │       ├── auth_service.py     # register_user, authenticate_user
+│   │       ├── bm25_service.py     # PostgreSQL FTS keyword retrieval (Phase 5)
 │   │       ├── citation_service.py # answer tags → structured citations
 │   │       ├── context_service.py  # labelled evidence → context block
 │   │       ├── document_service.py # CRUD, visibility, authorization
 │   │       ├── embedding_service.py# sentence-transformers/BGE, model reuse
+│   │       ├── hybrid_retrieval_service.py # dense+BM25 fusion + rerank (Phase 5)
 │   │       ├── ingestion_service.py# upload→extract→chunk→embed→ACTIVE
 │   │       ├── llm_service.py      # LLM provider abstraction (gemini/local)
 │   │       ├── pdf_service.py      # validation, page extraction, cleaning
 │   │       ├── rag_service.py      # question → evidence → answer → citations
+│   │       ├── reranking_service.py# cross-encoder re-scoring (Phase 5)
 │   │       ├── retrieval_service.py# pgvector cosine retrieval + permissions
+│   │       ├── retrieval_types.py  # shared RetrievalCandidate (Phase 5)
 │   │       └── storage_service.py  # local file storage (replaceable)
-│   ├── tests/                      # backend tests (auth, RBAC, docs, RAG; 107 passing)
+│   ├── tests/                      # backend tests (auth, RBAC, docs, RAG; 137 passing)
 │   ├── alembic/                    # migration env + versions/
 │   ├── alembic.ini
 │   ├── requirements.txt
@@ -302,10 +343,14 @@ Notable compatibility decisions:
 Planned backend modules (created in their phases, not present yet):
 
 ```
-app/services/        reranking_service, evaluation_service
+app/services/        evaluation_service
 app/rag/             embeddings, hybrid_search, reranker, confidence
 app/db/repositories/ data-access layer
 ```
+
+> Note: BM25, hybrid fusion, reranking and confidence are implemented (Phase 5);
+> they live in `app/services/bm25_service.py`, `app/services/hybrid_retrieval_service.py`,
+> `app/services/reranking_service.py` and `app/rag/confidence.py`.
 
 ---
 
@@ -363,6 +408,13 @@ Gemini-backed chat endpoint, set `GEMINI_API_KEY` in the root `.env` (read by
 | `LLM_PROVIDER` | `gemini` (default, needs `GEMINI_API_KEY`) or `local` (offline dev only). |
 | `LLM_MODEL` | Model name for the configured provider (default `gemini-flash-latest`). |
 | `GEMINI_API_KEY` | Google Gemini API key. **Never commit a real key.** |
+| `DENSE_CANDIDATE_K` | Dense candidate pool size for hybrid fusion (default 20). |
+| `BM25_CANDIDATE_K` | BM25 candidate pool size for hybrid fusion (default 20). |
+| `RERANK_TOP_K` | Number of fused candidates sent to the cross-encoder (default 8). |
+| `HYBRID_DENSE_WEIGHT` / `HYBRID_BM25_WEIGHT` | Fusion weights for normalized scores (default 0.6 / 0.4). |
+| `RERANKER_MODEL` | Cross-encoder model (default `cross-encoder/ms-marco-MiniLM-L-6-v2`). |
+| `RERANKER_BATCH_SIZE` | Cross-encoder inference batch size (default 8). |
+| `CONFIDENCE_THRESHOLD` | Minimum top reranker relevance (0..1) before answering (default 0.35). |
 | `NEXT_PUBLIC_API_URL` | Backend base URL baked into the frontend build (public, not a secret). |
 
 ---
@@ -443,8 +495,9 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 On first `POST /api/documents/{id}/process` the embedding model
-(`EMBEDDING_MODEL`) is downloaded from Hugging Face and cached locally; GPU is
-not required (CPU inference works).
+(`EMBEDDING_MODEL`) is downloaded from Hugging Face and cached locally; the
+cross-encoder reranker (`RERANKER_MODEL`) is downloaded on the first chat or
+search request. GPU is not required (CPU inference works).
 
 > Development note: the frontend dev container shares `./frontend/.next` with
 > the host. After running `npm run build` on the host and then
@@ -480,11 +533,12 @@ pip install -r requirements-dev.txt     # pytest + httpx
 python -m pytest app/tests -q
 ```
 
-Current suite: **107 tests** covering authentication, RBAC, document
+Current suite: **137 tests** covering authentication, RBAC, document
 validation/upload, extraction, chunking, embeddings, processing status
 transitions, the full document API, and the Phase 4 RAG pipeline (retrieval
 ranking + permission filtering, context assembly, LLM provider, citations,
-chat/search API).
+chat/search API) plus Phase 5 retrieval (BM25 ranking and permissions, score
+normalization, hybrid fusion, reranker ordering/metadata, confidence gates).
 
 ---
 
@@ -506,8 +560,8 @@ backend. Endpoints planned across the project:
 | PATCH | `/api/documents/{id}` | Edit metadata *(implemented, Phase 3)* |
 | DELETE | `/api/documents/{id}` | Delete document *(implemented, Phase 3)* |
 | POST | `/api/documents/{id}/process` | Trigger ingestion *(implemented, Phase 3)* |
-| POST | `/api/chat` | Ask a grounded question (RAG) *(implemented, Phase 4)* |
-| POST | `/api/search` | Raw semantic search, no LLM *(implemented, Phase 4)* |
+| POST | `/api/chat` | Ask a grounded question (RAG) *(implemented, Phase 4/5)* |
+| POST | `/api/search` | Raw hybrid search, no LLM *(implemented, Phase 4/5)* |
 | GET  | `/api/conversations` | List conversations |
 | GET  | `/api/conversations/{id}` | Conversation detail |
 | DELETE | `/api/conversations/{id}` | Delete conversation |
@@ -572,19 +626,25 @@ Document error codes: `DOCUMENT_NOT_FOUND`, `FORBIDDEN`,
 `INVALID_DOCUMENT_TYPE`, `EMPTY_DOCUMENT`, `DOCUMENT_TOO_LARGE`,
 `DOCUMENT_PROCESSING_FAILED`.
 
-### Chat & search (Phase 4)
+### Chat & search (Phase 4/5)
 
 Both endpoints require authentication and are permission-aware server-side.
 
-- `POST /api/chat` — body `{"message": "<question>"}`. Runs the RAG pipeline
-  over the documents the user can see and returns `{answer, citations}`.
-  When no evidence meets `RETRIEVAL_MIN_SIMILARITY`, or the LLM fails, the
-  answer is the fixed grounded fallback:
-  *"I couldn't find sufficient information in the available university
-  documents."* Citations resolve the model's source tags to actual retrieved
-  chunks; `section` is `null` when the document does not provide one.
+- `POST /api/chat` — body `{"message": "<question>"}`. Runs the Phase 5 RAG
+  pipeline over the documents the user can see and returns `{answer,
+  citations}`. When no evidence meets the retrieval thresholds, evidence is
+  below `CONFIDENCE_THRESHOLD`, or the LLM fails, the answer is the fixed
+  grounded fallback: *"I couldn't find sufficient information in the available
+  university documents."* Citations resolve the model's source tags to actual
+  retrieved chunks; each citation includes `relevance_score` (the final
+  reranker score, 0..1). `section` is `null` when the document does not provide
+  one.
 - `POST /api/search` — body `{"query": "..."}`. Developer/debug endpoint that
-  returns raw retrieval results (`{results: [...]}`) without calling an LLM.
+  returns raw hybrid retrieval results (`{results: [...]}`) without calling an
+  LLM. Each result exposes the per-stage scores — `dense_score` (pgvector
+  cosine similarity), `bm25_score` (min-max normalized `ts_rank_cd`),
+  `hybrid_score` (weighted fusion of the two), and `rerank_score` (sigmoid of
+  the cross-encoder logit). `score` is a legacy alias equal to `dense_score`.
 - Chat error codes: `MESSAGE_EMPTY`, `MESSAGE_TOO_LONG`.
 
 The LLM provider is selected by `LLM_PROVIDER`:
@@ -596,30 +656,46 @@ production).
 
 ## RAG pipeline
 
-Phase 4 implements **semantic (vector-only) retrieval → context → LLM →
-citations**. The pipeline runs entirely server-side; permission filtering is
-part of the retrieval query, never frontend filtering.
+Phase 5 implements **hybrid retrieval → fusion → cross-encoder reranking →
+confidence gate → context → LLM → citations**. The pipeline runs entirely
+server-side; permission filtering is part of every retrieval query, never
+frontend filtering.
 
 1. **Query processing** — the question is embedded with the same BGE model
    used for ingestion (`EMBEDDING_MODEL`).
 2. **Permission filtering** — chunks are retrieved only from documents the
    user can see (uploader or access-level match). The filter is applied in the
-   SQL `WHERE` clause *before* ranking.
-3. **Dense retrieval** — top `RETRIEVAL_TOP_K` chunks by cosine distance
+   SQL `WHERE` clause of *both* retrievers, *before* ranking.
+3. **Dense retrieval** — top `DENSE_CANDIDATE_K` chunks by cosine distance
    (`embedding <=> query`) via the HNSW index; chunks below
    `RETRIEVAL_MIN_SIMILARITY` are discarded.
-4. **Context builder** — winning chunks are labelled `[1]…[n]` and assembled,
+4. **BM25 retrieval** — top `BM25_CANDIDATE_K` chunks ranked by PostgreSQL FTS
+   `ts_rank_cd` over the generated `searchable_content` tsvector.
+5. **Fusion** — the two pools are deduplicated by chunk id; dense and BM25
+   scores are min-max normalized separately, then combined as
+   `hybrid_score = HYBRID_DENSE_WEIGHT·norm(dense) + HYBRID_BM25_WEIGHT·norm(bm25)`.
+6. **Reranking** — the top `RERANK_TOP_K` fused candidates are re-scored by a
+   cross-encoder against the question; `rerank_score` (sigmoid of the logit)
+   decides the final order.
+7. **Confidence gate** — if the best evidence does not clear
+   `CONFIDENCE_THRESHOLD`, the grounded fallback is returned and the LLM is
+   never called.
+8. **Context builder** — winning chunks are labelled `[1]…[n]` and assembled,
    truncating whole chunks to `MAX_CONTEXT_CHARS`.
-5. **LLM generation** — a provider-agnostic client (Gemini default, `local`
+9. **LLM generation** — a provider-agnostic client (Gemini default, `local`
    offline for development) answers strictly from the supplied context and is
    explicitly told to ignore any instructions embedded in the evidence
    (prompt-injection hardening). With insufficient evidence it returns the
    fixed grounded fallback.
-6. **Citations** — source tags in the answer are resolved against the
-   retrieved chunks into structured citations.
+10. **Citations** — source tags in the answer are resolved against the
+    retrieved chunks into structured citations, each carrying the reranker
+    `relevance_score`.
 
-Planned (Phases 5–7): BM25 keyword retrieval and hybrid merging, cross-encoder
-reranking, confidence gating, and evaluation tooling.
+Failure handling degrades gracefully: a BM25 failure falls back to dense-only,
+a dense failure to BM25-only, and a reranker outage returns the hybrid-fused
+order.
+
+Planned (Phases 6–7): conversations, feedback, and evaluation tooling.
 
 Example citation payload returned by the API:
 
@@ -662,8 +738,8 @@ measured.
 | 2 | Authentication: register, login, JWT, password hashing, roles, protected routes | ✅ Done |
 | 3 | Document ingestion: PDF upload, extraction, page tracking, chunking, embeddings, pgvector storage | ✅ Done |
 | 4 | Basic RAG: semantic retrieval, context building, LLM integration, answers, citations | ✅ Done |
-| 5 | Advanced retrieval: BM25, hybrid ranking, cross-encoder reranking, confidence threshold | ⏳ Next |
-| 6 | Product features: conversations, feedback, versioning, role-based access, admin, search | |
+| 5 | Advanced retrieval: BM25, hybrid ranking, cross-encoder reranking, confidence threshold | ✅ Done |
+| 6 | Product features: conversations, feedback, versioning, role-based access, admin, search | ⏳ Next |
 | 7 | Evaluation: dataset, retrieval metrics, RAG metrics, report | |
 | 8 | Polish: error handling, tests, loading/empty states, responsive UI, docs | |
 

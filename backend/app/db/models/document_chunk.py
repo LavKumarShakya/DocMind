@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import ForeignKey, Index, Integer, String, Text, Uuid, text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Computed, ForeignKey, Index, Integer, String, Text, Uuid, text
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config import settings
@@ -37,6 +37,12 @@ class DocumentChunk(UUIDPrimaryKeyMixin, Base):
         default=dict,
         server_default=text("'{}'::jsonb"),
     )
+    # Keyword search column for BM25 (Phase 5): a generated tsvector over the
+    # chunk text, backed by a GIN index. Populated automatically by Postgres.
+    searchable_content: Mapped[object | None] = mapped_column(
+        TSVECTOR,
+        Computed("to_tsvector('english', content)", persisted=True),
+    )
 
     document: Mapped[Document] = relationship(back_populates="chunks")
 
@@ -46,5 +52,10 @@ class DocumentChunk(UUIDPrimaryKeyMixin, Base):
             "embedding",
             postgresql_using="hnsw",
             postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+        Index(
+            "ix_document_chunks_searchable_content_gin",
+            "searchable_content",
+            postgresql_using="gin",
         ),
     )

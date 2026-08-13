@@ -178,3 +178,45 @@ def fake_llm_provider():
     set_llm_provider(fake)
     yield fake
     set_llm_provider(None)
+
+
+@pytest.fixture(autouse=True)
+def fake_reranking_service():
+    """Replace the shared reranking service with a deterministic fake.
+
+    Guarantees the test suite never downloads a cross-encoder model. The fake
+    assigns scores in input order (1.0, 0.9, ...) so ordering stays stable and
+    confidence passes by default. Tests that need specific scores can call
+    ``set_reranking_service`` themselves.
+    """
+    from app.services.retrieval_types import RetrievalCandidate
+    from app.services.reranking_service import set_reranking_service
+
+    class FakeRerankingService:
+        name = "fake-reranker"
+
+        def rerank(self, query: str, candidates: list) -> list:
+            reranked = []
+            for index, candidate in enumerate(candidates):
+                reranked.append(
+                    RetrievalCandidate(
+                        chunk_id=candidate.chunk_id,
+                        document_id=candidate.document_id,
+                        document_title=candidate.document_title,
+                        page_number=candidate.page_number,
+                        section=candidate.section,
+                        chunk_index=candidate.chunk_index,
+                        text=candidate.text,
+                        dense_score=candidate.dense_score,
+                        bm25_score=candidate.bm25_score,
+                        hybrid_score=candidate.hybrid_score,
+                        rerank_score=round(1.0 - 0.1 * index, 6),
+                    )
+                )
+            reranked.sort(key=lambda c: c.rerank_score or 0.0, reverse=True)
+            return reranked
+
+    fake = FakeRerankingService()
+    set_reranking_service(fake)
+    yield fake
+    set_reranking_service(None)

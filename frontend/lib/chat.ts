@@ -11,6 +11,7 @@ export interface Citation {
   page_number: number | null;
   section: string | null;
   chunk_index: number;
+  relevance_score: number | null;
 }
 
 export interface ChatResponse {
@@ -26,7 +27,11 @@ export interface SearchResult {
   section: string | null;
   chunk_index: number;
   text: string;
-  score: number;
+  score: number | null;
+  dense_score: number | null;
+  bm25_score: number | null;
+  hybrid_score: number | null;
+  rerank_score: number | null;
 }
 
 export function askQuestion(message: string): Promise<ChatResponse> {
