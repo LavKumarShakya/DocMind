@@ -1,0 +1,147 @@
+"""Document endpoints: upload, list, detail, edit, process, delete."""
+
+from __future__ import annotations
+
+import logging
+import uuid
+from datetime import date
+
+from fastapi import APIRouter, Depends, File, Form, UploadFile
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user
+from app.db.database import get_db
+from app.db.models import Document, User
+from app.schemas.document import DocumentResponse, DocumentUpdate
+from app.services import document_service, ingestion_service, pdf_service, storage_service
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/documents", tags=["documents"])
+
+
+def _to_response(db: Session, document: Document, with_chunk_count: bool = False) -> DocumentResponse:
+    response = DocumentResponse.model_validate(document)
+    response.uploader_name = document.uploader.name if document.uploader else None
+    if with_chunk_count:
+        response.chunk_count = document_service.count_chunks(db, document.id)
+    return response
+
+
+@router.post(
+    "",
+    response_model=DocumentResponse,
+    status_code=201,
+    summary="Upload a PDF document",
+)
+def upload_document(
+    file: UploadFile = File(...),
+    title: str | None = Form(default=None),
+    description: str | None = Form(default=None),
+    department: str | None = Form(default=None),
+    category: str | None = Form(default=None),
+    effective_date: date | None = Form(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DocumentResponse:
+    """Validate and store an uploaded PDF, creating an UPLOADED record."""
+    content = file.file.read()
+    pdf_service.check_mime_type(file.content_type)
+    safe_name = pdf_service.validate_upload(filename=file.filename, content=content)
+
+    document_id = uuid.uuid4()
+    stored_path = storage_service.save_document_file(document_id, content)
+
+    try:
+        document = document_service.create_document(
+            db,
+            document_id=document_id,
+            uploader=current_user,
+            original_filename=safe_name,
+            mime_type=file.content_type or "application/pdf",
+            file_size=len(content),
+            file_path=stored_path,
+            title=title,
+            description=description,
+            department=department,
+            category=category,
+            effective_date=effective_date,
+        )
+    except Exception:
+        logger.exception("Creating document record failed; removing stored file")
+        storage_service.delete_document_file(stored_path)
+        raise
+
+    return _to_response(db, document)
+
+
+@router.get(
+    "",
+    response_model=list[DocumentResponse],
+    summary="List documents visible to the current user",
+)
+def list_documents(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[DocumentResponse]:
+    return [_to_response(db, doc) for doc in document_service.list_documents(db, current_user)]
+
+
+@router.get(
+    "/{document_id}",
+    response_model=DocumentResponse,
+    summary="Document detail",
+)
+def get_document(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DocumentResponse:
+    document = document_service.get_visible_document(db, document_id, current_user)
+    return _to_response(db, document, with_chunk_count=True)
+
+
+@router.patch(
+    "/{document_id}",
+    response_model=DocumentResponse,
+    summary="Edit document metadata",
+)
+def update_document(
+    document_id: uuid.UUID,
+    payload: DocumentUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DocumentResponse:
+    document = document_service.get_manageable_document(db, document_id, current_user)
+    updated = document_service.update_document(
+        db, document, payload.model_dump(exclude_unset=True)
+    )
+    return _to_response(db, updated, with_chunk_count=True)
+
+
+@router.post(
+    "/{document_id}/process",
+    response_model=DocumentResponse,
+    summary="Run PDF ingestion for a document",
+)
+def process_document(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DocumentResponse:
+    processed = ingestion_service.process_document(db, document_id, current_user)
+    return _to_response(db, processed, with_chunk_count=True)
+
+
+@router.delete(
+    "/{document_id}",
+    summary="Delete a document and its stored file",
+)
+def delete_document(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    document = document_service.get_manageable_document(db, document_id, current_user)
+    document_service.delete_document(db, document)
+    return {"status": "deleted"}

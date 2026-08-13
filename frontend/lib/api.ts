@@ -91,6 +91,11 @@ export function apiPost<T>(
   return request<T>(path, init);
 }
 
+/** POST with a FormData body (no Content-Type set; the browser adds the boundary). */
+export function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  return request<T>(path, { method: "POST", body: formData });
+}
+
 export function apiPatch<T>(path: string, body?: unknown): Promise<T> {
   const init: RequestInit = { method: "PATCH" };
   if (body !== undefined) {

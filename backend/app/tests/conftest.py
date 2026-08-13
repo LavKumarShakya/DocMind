@@ -120,3 +120,32 @@ def user_factory(engine):
             session.close()
 
     return _create
+
+
+@pytest.fixture(autouse=True)
+def fake_embedding_service():
+    """Replace the shared embedding service with a deterministic fake.
+
+    Guarantees the test suite never downloads a model and that vector
+    dimension always matches settings.EMBEDDING_DIM.
+    """
+    from app.services.embedding_service import set_embedding_service
+
+    class FakeEmbeddingService:
+        model_name = "fake/test-model"
+
+        def __init__(self):
+            self.calls = 0
+
+        def embed(self, texts: list[str]) -> list[list[float]]:
+            self.calls += 1
+            dim = settings.EMBEDDING_DIM
+            return [
+                [float((hash(text) + i) % 997) / 997.0 for i in range(dim)]
+                for text in texts
+            ]
+
+    fake = FakeEmbeddingService()
+    set_embedding_service(fake)
+    yield fake
+    set_embedding_service(None)

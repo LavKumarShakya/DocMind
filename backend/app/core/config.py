@@ -40,9 +40,23 @@ class Settings(BaseSettings):
     # below can split a comma-separated value.
     CORS_ORIGINS: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
 
-    # --- Embeddings ---
+    # --- Embeddings (Phase 3) ---
     # Must match the vector dimension of the embedding model used in Phase 3+.
     EMBEDDING_DIM: int = 768
+    # Sentence-transformers model name. Default output dimension must equal
+    # EMBEDDING_DIM (BAAI/bge-base-en-v1.5 → 768).
+    EMBEDDING_MODEL: str = "BAAI/bge-base-en-v1.5"
+
+    # --- Document ingestion (Phase 3) ---
+    # Root directory for local document storage. Relative paths are resolved
+    # against the backend working directory. This storage implementation is
+    # replaceable (see app/services/storage_service.py).
+    STORAGE_DIR: str = "storage"
+    # Maximum accepted upload size in bytes (20 MiB default).
+    MAX_UPLOAD_SIZE_BYTES: int = 20 * 1024 * 1024
+    # Character-based chunking parameters used by the ingestion pipeline.
+    CHUNK_SIZE: int = 1000
+    CHUNK_OVERLAP: int = 150
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

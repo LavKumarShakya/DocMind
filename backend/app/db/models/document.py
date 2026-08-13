@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, ForeignKey, String, Text, Uuid, text
+from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, Integer, String, Text, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import AccessLevel, DocumentStatus
@@ -28,8 +28,8 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     status: Mapped[DocumentStatus] = mapped_column(
         enum_type(DocumentStatus, "document_status"),
         nullable=False,
-        default=DocumentStatus.PROCESSING,
-        server_default=text("'PROCESSING'"),
+        default=DocumentStatus.UPLOADED,
+        server_default=text("'UPLOADED'"),
         index=True,
     )
     access_level: Mapped[AccessLevel] = mapped_column(
@@ -40,6 +40,11 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         index=True,
     )
     file_path: Mapped[str] = mapped_column(String(1024), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(1024), nullable=False)
+    mime_type: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_size: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    page_count: Mapped[int | None] = mapped_column(Integer)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     uploaded_by: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

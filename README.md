@@ -9,7 +9,7 @@ rules, circulars, and more). Answers are grounded in the uploaded documents,
 are produced by a Retrieval-Augmented Generation (RAG) pipeline, and include
 structured citations pointing to the source document and page.
 
-> **Status: Phase 2 (Authentication & RBAC) complete.** This README documents both the
+> **Status: Phase 3 (Document Ingestion) complete.** This README documents both the
 > current implementation and the full planned system. Later phases build
 > incrementally on this foundation (see [Development roadmap](#development-roadmap)).
 
@@ -139,11 +139,40 @@ intentionally **not** built yet. It is laid out in the roadmap below.
 - Backend test suite (28 tests) covering registration, login, token
   validation and RBAC.
 
-**Planned (later phases):** PDF ingestion with metadata-aware chunking,
-semantic + BM25 hybrid retrieval, cross-encoder reranking, confidence gating,
-LLM answer generation with structured citations, conversations, feedback,
-document versioning, role-based document access, admin dashboard, search
-page, and evaluation tooling.
+**Implemented (Phase 3):**
+
+- PDF upload endpoint with strict validation: extension, MIME type, `%PDF-`
+  magic bytes, size limit and empty-file rejection. A file renamed to `.pdf`
+  is still rejected.
+- Local, replaceable storage layer (`app/services/storage_service.py`) storing
+  files under `<STORAGE_DIR>/documents/<id>/original.pdf`; server-generated
+  paths are stored in the DB, never exposed to clients.
+- Page-aware text extraction with PyMuPDF, deterministic text cleaning, and
+  present-only PDF metadata reading.
+- Character-based chunking (`CHUNK_SIZE` / `CHUNK_OVERLAP`) that never merges
+  text across page boundaries and preserves page number + global chunk order.
+- Embedding service using sentence-transformers / BGE
+  (`BAAI/bge-base-en-v1.5`, 768 dims) with a single reused model instance and
+  an explicit dimension check against `EMBEDDING_DIM`.
+- Ingestion pipeline (`app/services/ingestion_service.py`) with the
+  `UPLOADED → PROCESSING → ACTIVE` lifecycle and a `FAILED` state storing a
+  safe internal error description; reprocessing replaces old chunks (no
+  duplicates) and can recover a failed document.
+- Document API: upload, list, detail (with chunk count), metadata PATCH,
+  process, and delete (removes chunks + stored file). Authorization is
+  server-side: only the uploader or an ADMIN can manage; visibility is
+  access-level based.
+- Frontend document management in the authenticated dashboard: upload with
+  progress/disabled states, status badges, process/delete actions, empty and
+  error states.
+- Backend test suite grown to 73 tests covering validation, extraction,
+  chunking, embedding, DB rows, processing status transitions and the full
+  document API.
+
+**Planned (later phases):** semantic + BM25 hybrid retrieval, cross-encoder
+reranking, confidence gating, LLM answer generation with structured
+citations, conversations, feedback, document versioning, role-based document
+access, admin dashboard, search page, and evaluation tooling.
 
 ---
 
@@ -186,7 +215,7 @@ Notable compatibility decisions:
 │   │   ├── main.py                 # FastAPI app factory, CORS, handlers, routers
 │   │   ├── api/
 │   │   │   ├── deps.py             # auth deps: get_current_user, require_role
-│   │   │   └── routes/             # health, auth, admin (chat/documents later)
+│   │   │   └── routes/             # health, auth, admin, documents
 │   │   ├── core/
 │   │   │   ├── config.py           # centralized settings (pydantic-settings)
 │   │   │   ├── enums.py            # Role, DocumentStatus, AccessLevel, MessageRole
@@ -196,10 +225,17 @@ Notable compatibility decisions:
 │   │   ├── db/
 │   │   │   ├── database.py         # engine, session factory, Base, get_db
 │   │   │   └── models/             # ORM models (users, documents, chunks, ...)
+│   │   ├── rag/
+│   │   │   └── chunking.py         # page-aware chunking (chunk_size/overlap)
 │   │   ├── schemas/                # Pydantic request/response schemas
 │   │   └── services/
-│   │       └── auth_service.py     # register_user, authenticate_user
-│   ├── tests/                      # backend tests (auth, RBAC; 28 passing)
+│   │       ├── auth_service.py     # register_user, authenticate_user
+│   │       ├── document_service.py # CRUD, visibility, authorization
+│   │       ├── embedding_service.py# sentence-transformers/BGE, model reuse
+│   │       ├── ingestion_service.py# upload→extract→chunk→embed→ACTIVE
+│   │       ├── pdf_service.py      # validation, page extraction, cleaning
+│   │       └── storage_service.py  # local file storage (replaceable)
+│   ├── tests/                      # backend tests (auth, RBAC, documents; 73 passing)
 │   ├── alembic/                    # migration env + versions/
 │   ├── alembic.ini
 │   ├── requirements.txt
@@ -223,10 +259,9 @@ Notable compatibility decisions:
 Planned backend modules (created in their phases, not present yet):
 
 ```
-app/services/        document_service, ingestion_service,
-                     retrieval_service, reranking_service, rag_service,
+app/services/        retrieval_service, reranking_service, rag_service,
                      citation_service, evaluation_service
-app/rag/             embeddings, chunking, hybrid_search, reranker, prompts, confidence
+app/rag/             embeddings, hybrid_search, reranker, prompts, confidence
 app/db/repositories/ data-access layer
 ```
 
@@ -271,7 +306,11 @@ minimum `POSTGRES_PASSWORD`, `SECRET_KEY`, and `CORS_ORIGINS`.
 | `TEST_DATABASE_URL` | Dedicated test database (tests create it if missing; defaults to `campusrag_test`). |
 | `CORS_ORIGINS` | Comma-separated allowed browser origins. |
 | `DEBUG` | Enables verbose logging. |
-| `EMBEDDING_DIM` | Vector dimension of the embedding model (768 for BGE-base). Must match the model before Phase 3. |
+| `EMBEDDING_DIM` | Vector dimension of the embedding model (768 for BGE-base). Must equal the model's output. |
+| `EMBEDDING_MODEL` | sentence-transformers model name (default `BAAI/bge-base-en-v1.5`). |
+| `STORAGE_DIR` | Local document storage root (replaceable storage layer). |
+| `MAX_UPLOAD_SIZE_BYTES` | Maximum accepted PDF upload size (20 MiB default). |
+| `CHUNK_SIZE` / `CHUNK_OVERLAP` | Character-based chunking parameters. |
 | `NEXT_PUBLIC_API_URL` | Backend base URL baked into the frontend build (public, not a secret). |
 
 ---
@@ -342,12 +381,23 @@ the container so the host filesystem cannot shadow it.
 cd backend
 python -m venv .venv                 # once
 source .venv/bin/activate            # Linux/macOS  (Windows: .venv\Scripts\activate)
+# Install CPU-only torch first so pip does not pull CUDA wheels:
+pip install --index-url https://download.pytorch.org/whl/cpu "torch>=2.3,<3.0"
 pip install -r requirements.txt
 
 # ensure PostgreSQL is running (e.g. `docker compose up -d db` from the repo root)
 python -m alembic upgrade head
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+On first `POST /api/documents/{id}/process` the embedding model
+(`EMBEDDING_MODEL`) is downloaded from Hugging Face and cached locally; GPU is
+not required (CPU inference works).
+
+> Development note: the frontend dev container shares `./frontend/.next` with
+> the host. After running `npm run build` on the host and then
+> `docker compose up` for the dev server, remove `frontend/.next` once so the
+> container rebuilds its dev bundle cleanly.
 
 ### Frontend (host)
 
@@ -378,8 +428,9 @@ pip install -r requirements-dev.txt     # pytest + httpx
 python -m pytest app/tests -q
 ```
 
-Current suite: **28 tests** covering registration, login, token validation,
-`/api/auth/me` and role-based access control.
+Current suite: **73 tests** covering authentication, RBAC, document
+validation/upload, extraction, chunking, embeddings, processing status
+transitions and the full document API.
 
 ---
 
@@ -395,16 +446,16 @@ backend. Endpoints planned across the project:
 | POST | `/api/auth/login` | Issue JWT *(implemented, Phase 2)* |
 | GET  | `/api/auth/me` | Current user *(implemented, Phase 2)* |
 | GET  | `/api/admin/test` | RBAC check (ADMIN only) *(implemented, Phase 2)* |
+| POST | `/api/documents` | Upload a PDF *(implemented, Phase 3)* |
+| GET  | `/api/documents` | List documents *(implemented, Phase 3)* |
+| GET  | `/api/documents/{id}` | Document detail *(implemented, Phase 3)* |
+| PATCH | `/api/documents/{id}` | Edit metadata *(implemented, Phase 3)* |
+| DELETE | `/api/documents/{id}` | Delete document *(implemented, Phase 3)* |
+| POST | `/api/documents/{id}/process` | Trigger ingestion *(implemented, Phase 3)* |
 | POST | `/api/chat` | Ask a question (RAG) |
 | GET  | `/api/conversations` | List conversations |
 | GET  | `/api/conversations/{id}` | Conversation detail |
 | DELETE | `/api/conversations/{id}` | Delete conversation |
-| POST | `/api/documents` | Upload a document |
-| GET  | `/api/documents` | List documents |
-| GET  | `/api/documents/{id}` | Document detail |
-| PATCH | `/api/documents/{id}` | Edit metadata |
-| DELETE | `/api/documents/{id}` | Delete document |
-| POST | `/api/documents/{id}/process` | Trigger ingestion |
 | POST | `/api/feedback` | Rate an answer |
 | ...  | `/api/admin/...` | Admin endpoints (protected) |
 
@@ -439,11 +490,39 @@ Errors use a consistent envelope — never raw stack traces:
 Auth-specific codes: `AUTHENTICATION_REQUIRED`, `INVALID_CREDENTIALS`,
 `INVALID_TOKEN`, `TOKEN_EXPIRED`, `EMAIL_ALREADY_REGISTERED`, `FORBIDDEN`.
 
+### Documents (Phase 3)
+
+All document endpoints require authentication. Upload takes
+`multipart/form-data` (`file` + optional `title`, `description`, `department`,
+`category`, `effective_date`). Immutable fields such as status, uploader and
+storage paths cannot be changed via PATCH.
+
+- **Validation** rejects non-PDF files by extension, MIME type or magic bytes
+  (`INVALID_DOCUMENT_TYPE`), empty files (`EMPTY_DOCUMENT`) and oversized
+  files (`DOCUMENT_TOO_LARGE`).
+- **Lifecycle** `UPLOADED → PROCESSING → ACTIVE`; failures leave the document
+  `FAILED` with a safe internal `processing_error` (never exposed via the API,
+  never a stack trace). Reprocessing replaces old chunks, so retries are safe.
+- **Authorization** is server-side. A document is *visible* when the user
+  uploaded it or its `access_level` matches their role (`PUBLIC` is viewable
+  by everyone). Only the uploader or an `ADMIN` may edit, process or delete.
+- **Storage** is local and replaceable: `STORAGE_DIR` → `documents/<id>/`.
+  Internal paths are never returned by the API.
+- **Embeddings** use the configured `EMBEDDING_MODEL`
+  (`BAAI/bge-base-en-v1.5` by default, 768 dims matching `EMBEDDING_DIM`). The
+  model is loaded once per process and rejected if its dimension does not
+  match the configured value.
+
+Document error codes: `DOCUMENT_NOT_FOUND`, `FORBIDDEN`,
+`INVALID_DOCUMENT_TYPE`, `EMPTY_DOCUMENT`, `DOCUMENT_TOO_LARGE`,
+`DOCUMENT_PROCESSING_FAILED`.
+
 ---
 
 ## RAG pipeline
 
-Planned implementation (Phases 3–7). The database already supports it.
+Planned implementation (Phases 4–7). Chunk text and embeddings are already
+stored in pgvector by Phase 3; the retrieval layer is not built yet.
 
 1. **Query processing** — normalize the question; optionally rewrite using
    conversation context, only when necessary.
@@ -502,8 +581,8 @@ measured.
 |-------|-------|--------|
 | 1 | Foundation: repo, Docker, PostgreSQL+pgvector, FastAPI, Next.js, models, Alembic, health checks | ✅ Done |
 | 2 | Authentication: register, login, JWT, password hashing, roles, protected routes | ✅ Done |
-| 3 | Document ingestion: PDF upload, extraction, page tracking, chunking, embeddings, pgvector storage | ⏳ Next |
-| 4 | Basic RAG: semantic retrieval, context building, LLM integration, answers, citations | |
+| 3 | Document ingestion: PDF upload, extraction, page tracking, chunking, embeddings, pgvector storage | ✅ Done |
+| 4 | Basic RAG: semantic retrieval, context building, LLM integration, answers, citations | ⏳ Next |
 | 5 | Advanced retrieval: BM25, hybrid ranking, cross-encoder reranking, confidence threshold | |
 | 6 | Product features: conversations, feedback, versioning, role-based access, admin, search | |
 | 7 | Evaluation: dataset, retrieval metrics, RAG metrics, report | |

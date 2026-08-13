@@ -10,6 +10,7 @@ class Role(str, Enum):
 
 
 class DocumentStatus(str, Enum):
+    UPLOADED = "UPLOADED"
     PROCESSING = "PROCESSING"
     ACTIVE = "ACTIVE"
     ARCHIVED = "ARCHIVED"

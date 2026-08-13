@@ -1,19 +1,145 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, LayoutDashboard, ShieldCheck } from "lucide-react";
+import {
+  BookOpen,
+  FileText,
+  Loader2,
+  RefreshCw,
+  Trash2,
+  TriangleAlert,
+  Upload,
+} from "lucide-react";
 
 import { RequireAuth } from "@/components/require-auth";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import {
+  type CampusDocument,
+  type DocumentStatus,
+  deleteDocument,
+  formatDate,
+  formatFileSize,
+  listDocuments,
+  processDocument,
+  uploadDocument,
+} from "@/lib/documents";
+import { cn } from "@/lib/utils";
+
+const statusStyles: Record<DocumentStatus, string> = {
+  UPLOADED: "bg-blue-50 text-blue-700 border-blue-200",
+  PROCESSING: "bg-amber-50 text-amber-700 border-amber-200",
+  ACTIVE: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  FAILED: "bg-red-50 text-red-700 border-red-200",
+  ARCHIVED: "bg-zinc-100 text-zinc-600 border-zinc-200",
+};
+
+function StatusBadge({ status }: { status: DocumentStatus }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
+        statusStyles[status],
+      )}
+    >
+      {status === "PROCESSING" ? "Processing" : status.charAt(0) + status.slice(1).toLowerCase()}
+    </span>
+  );
+}
 
 function DashboardShell() {
-  const { user, status, logout } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
+
+  const [documents, setDocuments] = useState<CampusDocument[]>([]);
+  const [listState, setListState] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
+  const [listError, setListError] = useState<string | null>(null);
+
+  // Upload state
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Processing state: which document is currently being processed
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setListState("loading");
+    try {
+      setDocuments(await listDocuments());
+      setListState("ready");
+      setListError(null);
+    } catch (err) {
+      setListError(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Unable to load documents.",
+      );
+      setListState("error");
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   function handleLogout() {
     logout();
     router.push("/");
+  }
+
+  async function handleUpload(e: React.FormEvent) {
+    e.preventDefault();
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (title.trim()) formData.append("title", title.trim());
+      await uploadDocument(formData);
+      setFile(null);
+      setTitle("");
+      await refresh();
+    } catch (err) {
+      setUploadError(
+        err instanceof ApiError
+          ? err.message
+          : "Upload failed. Is the file a valid PDF?",
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleProcess(id: string) {
+    setProcessingId(id);
+    try {
+      await processDocument(id);
+      await refresh();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Processing failed.");
+      await refresh();
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function handleDelete(id: string, title: string) {
+    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    try {
+      await deleteDocument(id);
+      await refresh();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Delete failed.");
+    }
   }
 
   return (
@@ -37,7 +163,7 @@ function DashboardShell() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-6 px-6 py-10">
+      <main className="mx-auto max-w-4xl space-y-8 px-6 py-10">
         <section>
           <h1 className="text-3xl font-semibold tracking-tight">
             Welcome, {user?.name}
@@ -51,37 +177,156 @@ function DashboardShell() {
           </p>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <ShieldCheck className="h-4 w-4" aria-hidden />
-              <h2 className="text-sm font-medium uppercase tracking-wide">
-                Authentication status
-              </h2>
-            </div>
-            <p className="mt-3 text-sm text-zinc-700">
-              Status:{" "}
-              <span className="font-medium text-emerald-600">
-                {status === "authenticated" ? "authenticated" : status}
-              </span>
-            </p>
-            <p className="mt-1 text-sm text-zinc-500">
-              Role:{" "}
-              <span className="font-medium text-zinc-700">{user?.role}</span>
-            </p>
+        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Upload className="h-4 w-4 text-zinc-500" aria-hidden />
+            <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+              Upload a PDF
+            </h2>
           </div>
 
-          <div className="flex flex-col justify-between rounded-xl border border-dashed border-zinc-300 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <LayoutDashboard className="h-4 w-4" aria-hidden />
-              <h2 className="text-sm font-medium uppercase tracking-wide">
-                Dashboard
-              </h2>
+          <form onSubmit={handleUpload} className="mt-4 space-y-4">
+            {uploadError && <Alert variant="error">{uploadError}</Alert>}
+            <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+              <div className="flex items-center gap-3">
+                <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-zinc-300 px-4 py-3 text-sm text-zinc-600 transition-colors hover:border-indigo-400 hover:bg-indigo-50/40">
+                  {file ? (
+                    <span className="font-medium text-zinc-800">
+                      {file.name} ({formatFileSize(file.size)})
+                    </span>
+                  ) : (
+                    "Choose a PDF file…"
+                  )}
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="sr-only"
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+                <Input
+                  className="w-48"
+                  placeholder="Title (optional)"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={!file || uploading}
+                className="self-end"
+              >
+                {uploading && (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                )}
+                Upload
+              </Button>
             </div>
-            <p className="mt-3 text-sm text-zinc-600">
-              Document management and the RAG chat arrive in later phases.
-            </p>
+          </form>
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-zinc-500" aria-hidden />
+              <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+                Documents
+              </h2>
+              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                {documents.length}
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={refresh}>
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+              Refresh
+            </Button>
           </div>
+
+          {listState === "loading" && (
+            <div className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              Loading documents…
+            </div>
+          )}
+
+          {listState === "error" && (
+            <Alert className="mt-4" variant="error">
+              {listError}
+            </Alert>
+          )}
+
+          {listState === "ready" && documents.length === 0 && (
+            <div className="mt-4 rounded-xl border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500">
+              No documents yet. Upload a PDF above to get started.
+            </div>
+          )}
+
+          {listState === "ready" && documents.length > 0 && (
+            <ul className="mt-4 space-y-3">
+              {documents.map((doc) => {
+                const busy = processingId === doc.id;
+                const canProcess =
+                  (doc.status === "UPLOADED" || doc.status === "FAILED") && !busy;
+                return (
+                  <li
+                    key={doc.id}
+                    className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-medium text-zinc-900">
+                            {doc.title}
+                          </h3>
+                          <StatusBadge status={doc.status} />
+                        </div>
+                        <p className="mt-1 truncate text-sm text-zinc-500">
+                          {doc.original_filename} · {formatFileSize(doc.file_size)}
+                          {doc.page_count != null && ` · ${doc.page_count} page${doc.page_count === 1 ? "" : "s"}`}
+                          {doc.chunk_count != null && doc.chunk_count > 0 && ` · ${doc.chunk_count} chunks`}
+                        </p>
+                        <p className="mt-0.5 text-xs text-zinc-400">
+                          Uploaded {formatDate(doc.created_at)}
+                          {doc.processed_at && ` · Processed ${formatDate(doc.processed_at)}`}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {busy ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                            Processing…
+                          </span>
+                        ) : (
+                          <>
+                            {canProcess && (
+                              <Button size="sm" onClick={() => handleProcess(doc.id)}>
+                                Process
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(doc.id, doc.title)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                              Delete
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {doc.status === "FAILED" && (
+                      <p className="mt-3 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+                        <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                        Processing failed. You can process again after uploading
+                        a valid PDF.
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
       </main>
     </div>

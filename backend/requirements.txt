@@ -18,7 +18,12 @@ psycopg[binary]>=3.2,<4.0
 alembic>=1.13,<2.0
 pgvector>=0.3,<1.0
 
-# --- Upcoming phases (documented, not yet required at runtime) ---
-# Phase 3 (ingestion): pymupdf
-# Phase 3+ (embeddings): sentence-transformers
+# --- Document ingestion (Phase 3) ---
+pymupdf>=1.24,<2.0
+
+# --- Embeddings (Phase 3) ---
+# torch is installed separately (CPU/GPU wheel) - see Dockerfile and README.
+sentence-transformers>=3.0,<5.0
+
+# --- Future phases (documented, not yet required at runtime) ---
 # Phase 5 (rerank): sentence-transformers (cross-encoder models)

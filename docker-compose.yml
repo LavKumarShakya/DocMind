@@ -32,6 +32,11 @@ services:
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-me-in-production}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       EMBEDDING_DIM: ${EMBEDDING_DIM:-768}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-base-en-v1.5}
+      STORAGE_DIR: ${STORAGE_DIR:-storage}
+      MAX_UPLOAD_SIZE_BYTES: ${MAX_UPLOAD_SIZE_BYTES:-20971520}
+      CHUNK_SIZE: ${CHUNK_SIZE:-1000}
+      CHUNK_OVERLAP: ${CHUNK_OVERLAP:-150}
     ports:
       - "8000:8000"
     volumes:

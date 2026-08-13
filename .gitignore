@@ -27,6 +27,10 @@ next-env.d.ts
 *.log
 logs/
 
+# --- Uploaded document storage (Phase 3) ---
+storage/
+backend/storage/
+
 # --- OS / editor ---
 .DS_Store
 Thumbs.db
