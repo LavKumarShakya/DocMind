@@ -9,7 +9,7 @@ rules, circulars, and more). Answers are grounded in the uploaded documents,
 are produced by a Retrieval-Augmented Generation (RAG) pipeline, and include
 structured citations pointing to the source document and page.
 
-> **Status: Phase 1 (Foundation) complete.** This README documents both the
+> **Status: Phase 2 (Authentication & RBAC) complete.** This README documents both the
 > current implementation and the full planned system. Later phases build
 > incrementally on this foundation (see [Development roadmap](#development-roadmap)).
 
@@ -122,11 +122,28 @@ intentionally **not** built yet. It is laid out in the roadmap below.
 - FastAPI shell: CORS, structured errors, logging, health endpoint.
 - Next.js shell: TypeScript, Tailwind, typed API client, health UI.
 
-**Planned (later phases):** authentication (JWT, RBAC), PDF ingestion with
-metadata-aware chunking, semantic + BM25 hybrid retrieval, cross-encoder
-reranking, confidence gating, LLM answer generation with structured
-citations, conversations, feedback, document versioning, role-based access,
-admin dashboard, search page, and evaluation tooling.
+**Implemented (Phase 2):**
+
+- Registration, login and current-user endpoints.
+- bcrypt password hashing (never stored/logged in plaintext).
+- JWT access tokens (signed, expiring) issued on login.
+- Reusable auth dependencies (`get_current_user`, `require_role`) enforcing
+  access control server-side.
+- Roles `STUDENT` / `FACULTY` / `ADMIN`; new users always start as `STUDENT`;
+  clients can never self-assign a role.
+- Structured auth errors (`AUTHENTICATION_REQUIRED`, `INVALID_CREDENTIALS`,
+  `INVALID_TOKEN`, `TOKEN_EXPIRED`, `EMAIL_ALREADY_REGISTERED`, `FORBIDDEN`).
+- Frontend auth flow: login/register pages, persistent session (JWT in
+  `localStorage`), authenticated dashboard with logout, protected client-side
+  route guard, and an API client that attaches the Bearer token automatically.
+- Backend test suite (28 tests) covering registration, login, token
+  validation and RBAC.
+
+**Planned (later phases):** PDF ingestion with metadata-aware chunking,
+semantic + BM25 hybrid retrieval, cross-encoder reranking, confidence gating,
+LLM answer generation with structured citations, conversations, feedback,
+document versioning, role-based document access, admin dashboard, search
+page, and evaluation tooling.
 
 ---
 
@@ -166,26 +183,33 @@ Notable compatibility decisions:
 .
 ├── backend/
 │   ├── app/
-│   │   ├── main.py                 # FastAPI app factory, CORS, handlers
+│   │   ├── main.py                 # FastAPI app factory, CORS, handlers, routers
 │   │   ├── api/
-│   │   │   └── routes/             # health (Phase 1); auth/chat/documents/etc. later
+│   │   │   ├── deps.py             # auth deps: get_current_user, require_role
+│   │   │   └── routes/             # health, auth, admin (chat/documents later)
 │   │   ├── core/
 │   │   │   ├── config.py           # centralized settings (pydantic-settings)
 │   │   │   ├── enums.py            # Role, DocumentStatus, AccessLevel, MessageRole
 │   │   │   ├── errors.py           # structured error responses
-│   │   │   └── logging.py          # logging setup
+│   │   │   ├── logging.py          # logging setup
+│   │   │   └── security.py         # bcrypt hashing, JWT encode/decode
 │   │   ├── db/
 │   │   │   ├── database.py         # engine, session factory, Base, get_db
 │   │   │   └── models/             # ORM models (users, documents, chunks, ...)
-│   │   └── schemas/                # Pydantic request/response schemas
+│   │   ├── schemas/                # Pydantic request/response schemas
+│   │   └── services/
+│   │       └── auth_service.py     # register_user, authenticate_user
+│   ├── tests/                      # backend tests (auth, RBAC; 28 passing)
 │   ├── alembic/                    # migration env + versions/
 │   ├── alembic.ini
 │   ├── requirements.txt
+│   ├── requirements-dev.txt        # pytest, httpx
 │   ├── Dockerfile
 │   └── .env.example
 ├── frontend/
-│   ├── app/                        # Next.js App Router pages
-│   ├── lib/                        # api client, auth helpers, utils
+│   ├── app/                        # Next.js App Router pages (login, register, dashboard)
+│   ├── components/                 # ui primitives, RequireAuth guard
+│   ├── lib/                        # api client, auth context/helpers
 │   ├── package.json
 │   ├── tsconfig.json
 │   ├── next.config.ts
@@ -199,12 +223,11 @@ Notable compatibility decisions:
 Planned backend modules (created in their phases, not present yet):
 
 ```
-app/services/        auth_service, document_service, ingestion_service,
+app/services/        document_service, ingestion_service,
                      retrieval_service, reranking_service, rag_service,
                      citation_service, evaluation_service
 app/rag/             embeddings, chunking, hybrid_search, reranker, prompts, confidence
 app/db/repositories/ data-access layer
-app/tests/           backend tests
 ```
 
 ---
@@ -245,6 +268,7 @@ minimum `POSTGRES_PASSWORD`, `SECRET_KEY`, and `CORS_ORIGINS`.
 | `POSTGRES_USER/PASSWORD/DB` | PostgreSQL credentials (used by Compose). |
 | `SECRET_KEY` | JWT signing key (used from Phase 2). |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT lifetime. |
+| `TEST_DATABASE_URL` | Dedicated test database (tests create it if missing; defaults to `campusrag_test`). |
 | `CORS_ORIGINS` | Comma-separated allowed browser origins. |
 | `DEBUG` | Enables verbose logging. |
 | `EMBEDDING_DIM` | Vector dimension of the embedding model (768 for BGE-base). Must match the model before Phase 3. |
@@ -342,6 +366,21 @@ npm run build          # production build
 - Interactive docs: `http://localhost:8000/docs`
 - Frontend: `http://localhost:3000` (landing page renders live backend health)
 
+### Tests
+
+Backend tests use a dedicated database (default `campusrag_test`) so they never
+touch development data. The test suite creates the test database automatically
+if it is missing.
+
+```bash
+cd backend
+pip install -r requirements-dev.txt     # pytest + httpx
+python -m pytest app/tests -q
+```
+
+Current suite: **28 tests** covering registration, login, token validation,
+`/api/auth/me` and role-based access control.
+
 ---
 
 ## API documentation
@@ -351,10 +390,11 @@ backend. Endpoints planned across the project:
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET  | `/api/health` | Health check *(implemented)* |
-| POST | `/api/auth/register` | Create account |
-| POST | `/api/auth/login` | Issue JWT |
-| GET  | `/api/auth/me` | Current user |
+| GET  | `/api/health` | Health check *(implemented, Phase 1)* |
+| POST | `/api/auth/register` | Create account *(implemented, Phase 2)* |
+| POST | `/api/auth/login` | Issue JWT *(implemented, Phase 2)* |
+| GET  | `/api/auth/me` | Current user *(implemented, Phase 2)* |
+| GET  | `/api/admin/test` | RBAC check (ADMIN only) *(implemented, Phase 2)* |
 | POST | `/api/chat` | Ask a question (RAG) |
 | GET  | `/api/conversations` | List conversations |
 | GET  | `/api/conversations/{id}` | Conversation detail |
@@ -368,6 +408,23 @@ backend. Endpoints planned across the project:
 | POST | `/api/feedback` | Rate an answer |
 | ...  | `/api/admin/...` | Admin endpoints (protected) |
 
+### Authentication (Phase 2)
+
+- `POST /api/auth/register` — body `{name, email, password}` (JSON). Always
+  creates a `STUDENT`; any client-supplied role is rejected. Returns the new
+  user (no token).
+- `POST /api/auth/login` — `application/x-www-form-urlencoded`
+  `username` + `password` (OAuth2 password form, so Swagger UI's "Authorize"
+  button works). Returns `{access_token, token_type, user}`.
+- `GET /api/auth/me` — requires `Authorization: Bearer <token>`. Returns the
+  current user; the frontend calls this on load to restore a session.
+- Roles are stored uppercase (`STUDENT`, `FACULTY`, `ADMIN`). Endpoints declare
+  their required role via `require_role` dependencies; access is enforced
+  server-side regardless of the UI.
+- Tokens: HS256 signed with `SECRET_KEY`, expiry `ACCESS_TOKEN_EXPIRE_MINUTES`
+  (default 30). On the frontend the token lives in `localStorage` under
+  `campusrag_token` (dev-tier persistence; passwords are never stored).
+
 Errors use a consistent envelope — never raw stack traces:
 
 ```json
@@ -378,6 +435,9 @@ Errors use a consistent envelope — never raw stack traces:
   }
 }
 ```
+
+Auth-specific codes: `AUTHENTICATION_REQUIRED`, `INVALID_CREDENTIALS`,
+`INVALID_TOKEN`, `TOKEN_EXPIRED`, `EMAIL_ALREADY_REGISTERED`, `FORBIDDEN`.
 
 ---
 
@@ -441,8 +501,8 @@ measured.
 | Phase | Scope | Status |
 |-------|-------|--------|
 | 1 | Foundation: repo, Docker, PostgreSQL+pgvector, FastAPI, Next.js, models, Alembic, health checks | ✅ Done |
-| 2 | Authentication: register, login, JWT, password hashing, roles, protected routes | ⏳ Next |
-| 3 | Document ingestion: PDF upload, extraction, page tracking, chunking, embeddings, pgvector storage | |
+| 2 | Authentication: register, login, JWT, password hashing, roles, protected routes | ✅ Done |
+| 3 | Document ingestion: PDF upload, extraction, page tracking, chunking, embeddings, pgvector storage | ⏳ Next |
 | 4 | Basic RAG: semantic retrieval, context building, LLM integration, answers, citations | |
 | 5 | Advanced retrieval: BM25, hybrid ranking, cross-encoder reranking, confidence threshold | |
 | 6 | Product features: conversations, feedback, versioning, role-based access, admin, search | |
