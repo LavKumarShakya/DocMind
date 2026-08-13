@@ -1,0 +1,19 @@
+# --- Web framework ---
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+
+# --- Validation & configuration ---
+pydantic>=2.7,<3.0
+pydantic-settings>=2.3,<3.0
+
+# --- Database ---
+sqlalchemy>=2.0.30,<3.0
+psycopg[binary]>=3.2,<4.0
+alembic>=1.13,<2.0
+pgvector>=0.3,<1.0
+
+# --- Upcoming phases (documented, not yet required at runtime) ---
+# Phase 2 (auth):  passlib[bcrypt], python-jose or pyjwt, python-multipart
+# Phase 3 (ingestion): pymupdf
+# Phase 3+ (embeddings): sentence-transformers
+# Phase 5 (rerank): sentence-transformers (cross-encoder models)

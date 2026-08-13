@@ -1,0 +1,64 @@
+name: campusrag
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: campusrag-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-campusrag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campusrag_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-campusrag}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: campusrag-backend
+    restart: unless-stopped
+    environment:
+      # The host part is `db` (compose service name) inside the Docker network.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-campusrag}:${POSTGRES_PASSWORD:-campusrag_dev_password}@db:5432/${POSTGRES_DB:-campusrag}
+      APP_ENV: ${APP_ENV:-development}
+      DEBUG: ${DEBUG:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-me-in-production}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-768}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind mount enables hot-reload during development.
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    # Apply pending migrations, then start the API with reload.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  frontend:
+    build: ./frontend
+    container_name: campusrag-frontend
+    restart: unless-stopped
+    environment:
+      # Browsers call the API from the host, so localhost works for local dev.
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      # Keep the image's node_modules so the host filesystem cannot shadow it.
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev
+
+volumes:
+  pgdata:
