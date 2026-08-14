@@ -30,6 +30,7 @@ logs/
 # --- Uploaded document storage (Phase 3) ---
 storage/
 backend/storage/
+backend/evaluation/storage/
 
 # --- OS / editor ---
 .DS_Store

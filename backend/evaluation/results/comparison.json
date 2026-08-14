@@ -1,0 +1,188 @@
+{
+  "baseline": {
+    "questions_total": 56,
+    "questions_answerable": 43,
+    "recall@1": 0.5814,
+    "recall@3": 0.5814,
+    "recall@5": 0.5814,
+    "recall@10": 0.5814,
+    "mrr": 0.5814,
+    "doc_recall@1": 0.5814,
+    "doc_recall@5": 0.5814,
+    "doc_recall@10": 0.5814,
+    "answered": 56,
+    "answer_accuracy": 0.3929,
+    "fallback_rate": 0.4821,
+    "faithfulness_0": 0.6786,
+    "faithfulness_2": 0.1964,
+    "failure_rate": 0.5357,
+    "failures": {
+      "hallucination": 6,
+      "retrieval_miss": 18,
+      "wrong_answer": 6
+    },
+    "citation_validity_mean": null,
+    "citation_questions_with_tags": 0,
+    "category_breakdown": {
+      "edge": {
+        "count": 5,
+        "answerable": 5,
+        "recall@5": 1.0,
+        "accuracy": 0.2,
+        "fallback_rate": 0.0
+      },
+      "entity": {
+        "count": 8,
+        "answerable": 8,
+        "recall@5": 0.375,
+        "accuracy": 0.125,
+        "fallback_rate": 0.625
+      },
+      "keyword": {
+        "count": 6,
+        "answerable": 6,
+        "recall@5": 0.6667,
+        "accuracy": 0.6667,
+        "fallback_rate": 0.3333
+      },
+      "numeric": {
+        "count": 21,
+        "answerable": 21,
+        "recall@5": 0.5238,
+        "accuracy": 0.2857,
+        "fallback_rate": 0.4762
+      },
+      "semantic": {
+        "count": 3,
+        "answerable": 3,
+        "recall@5": 0.6667,
+        "accuracy": 0.3333,
+        "fallback_rate": 0.3333
+      },
+      "unanswerable": {
+        "count": 13,
+        "answerable": 0,
+        "recall@5": 0.0,
+        "accuracy": 0.6923,
+        "fallback_rate": 0.6923
+      }
+    }
+  },
+  "phase5": {
+    "questions_total": 56,
+    "questions_answerable": 43,
+    "recall@1": 0.8837,
+    "recall@3": 0.8837,
+    "recall@5": 0.8837,
+    "recall@10": 0.8837,
+    "mrr": 0.8837,
+    "doc_recall@1": 0.8837,
+    "doc_recall@5": 0.8837,
+    "doc_recall@10": 0.8837,
+    "answered": 56,
+    "answer_accuracy": 0.4286,
+    "fallback_rate": 0.2143,
+    "faithfulness_0": 0.625,
+    "faithfulness_2": 0.2857,
+    "failure_rate": 0.4643,
+    "failures": {
+      "confidence_rejection": 5,
+      "hallucination": 16,
+      "wrong_answer": 5
+    },
+    "citation_validity_mean": null,
+    "citation_questions_with_tags": 0,
+    "confidence": {
+      "answerable": {
+        "accepted": 38,
+        "rejected": 5,
+        "accepted_correct": 17,
+        "accepted_accuracy": 0.4474
+      },
+      "unanswerable": {
+        "accepted": 6,
+        "rejected": 7,
+        "rejected_correct": 7,
+        "rejection_rate": 1.0
+      },
+      "rejection_rate_answerable": 0.1163,
+      "false_acceptance": 0.0
+    },
+    "rejection_rate_answerable": 0.1163,
+    "category_breakdown": {
+      "edge": {
+        "count": 5,
+        "answerable": 5,
+        "recall@5": 1.0,
+        "accuracy": 0.4,
+        "fallback_rate": 0.0
+      },
+      "entity": {
+        "count": 8,
+        "answerable": 8,
+        "recall@5": 0.875,
+        "accuracy": 0.375,
+        "fallback_rate": 0.125
+      },
+      "keyword": {
+        "count": 6,
+        "answerable": 6,
+        "recall@5": 0.8333,
+        "accuracy": 0.5,
+        "fallback_rate": 0.1667
+      },
+      "numeric": {
+        "count": 21,
+        "answerable": 21,
+        "recall@5": 0.8571,
+        "accuracy": 0.381,
+        "fallback_rate": 0.1429
+      },
+      "semantic": {
+        "count": 3,
+        "answerable": 3,
+        "recall@5": 1.0,
+        "accuracy": 0.3333,
+        "fallback_rate": 0.0
+      },
+      "unanswerable": {
+        "count": 13,
+        "answerable": 0,
+        "recall@5": 0.0,
+        "accuracy": 0.5385,
+        "fallback_rate": 0.5385
+      }
+    }
+  },
+  "deltas": {
+    "recall@1": "+0.3023",
+    "recall@3": "+0.3023",
+    "recall@5": "+0.3023",
+    "recall@10": "+0.3023",
+    "mrr": "+0.3023",
+    "doc_recall@1": "+0.3023",
+    "doc_recall@5": "+0.3023",
+    "doc_recall@10": "+0.3023"
+  },
+  "latency": {
+    "baseline": {
+      "dense": 73.6,
+      "bm25": 0.0,
+      "fuse": 0.0,
+      "rerank": 0.0,
+      "e2e_mean_ms": 73.7,
+      "llm_mean_ms": 0.0,
+      "mode": "baseline"
+    },
+    "phase5": {
+      "dense": 72.2,
+      "bm25": 2.3,
+      "fuse": 0.0,
+      "rerank": 47.6,
+      "e2e_mean_ms": 122.4,
+      "llm_mean_ms": 0.0,
+      "mode": "phase5"
+    }
+  },
+  "report_markdown": "# CampusRAG Phase 7 \u2014 Evaluation Report\n\nDataset `1.0` \u00b7 56 questions \u00b7\nbaseline run 2026-08-14T06:40:29.700707+00:00 \u00b7 phase5 run 2026-08-14T06:40:14.146107+00:00\n\nBaseline = Phase 4 (dense-only, no confidence gate) \u00b7 phase5 = Phase 5 (dense + BM25 \u2192 fuse \u2192 rerank, confidence gate).\nEmbedding `BAAI/bge-base-en-v1.5` \u00b7 reranker `cross-encoder/ms-marco-MiniLM-L-6-v2` \u00b7 LLM `local` \u00b7\neval window top-10 \u00b7 confidence threshold 0.35 \u00b7\nrerank top-10 \u00b7 min similarity 0.65.\n\n### Confidence gate (phase5)\n\n| Bucket | N | Rate |\n| --- | --- | --- |\n| Answerable accepted | 38 | 0.4474 |\n| Answerable rejected (false rejection) | 5 | 0.1163 |\n| Unanswerable rejected (correct refusal) | 7 | 1.0000 |\n| Unanswerable accepted (false acceptance) | 6 | 0.0000 |\n\n## Retrieval quality (answerable questions)\n\n| Metric | Baseline | phase5 | \u0394 |\n| --- | --- | --- | --- |\n| recall@1 | 0.5814 | 0.8837 | +0.3023 |\n| recall@3 | 0.5814 | 0.8837 | +0.3023 |\n| recall@5 | 0.5814 | 0.8837 | +0.3023 |\n| recall@10 | 0.5814 | 0.8837 | +0.3023 |\n| mrr | 0.5814 | 0.8837 | +0.3023 |\n| doc_recall@1 | 0.5814 | 0.8837 | +0.3023 |\n| doc_recall@5 | 0.5814 | 0.8837 | +0.3023 |\n| doc_recall@10 | 0.5814 | 0.8837 | +0.3023 |\n\n## Generation quality\n\n| Metric | Baseline | phase5 | \u0394 |\n| --- | --- | --- | --- |\n| Answer accuracy | 0.3929 | 0.4286 | +0.0357 |\n| Fallback rate | 0.4821 | 0.2143 | -0.2678 |\n| Faithfulness full (2/2) | 0.1964 | 0.2857 | +0.0893 |\n| Faithfulness unsupported (0/2) | 0.6786 | 0.6250 | -0.0536 |\n| Failure rate | 0.5357 | 0.4643 | -0.0714 |\n| Citation validity (mean) | n/a | n/a | n/a |\n\n## Latency (mean per stage)\n\n| Stage | Baseline | phase5 |\n| --- | --- | --- |\n| dense | 73.6 ms | 72.2 ms |\n| bm25 | 0.0 ms | 2.3 ms |\n| fuse | 0.0 ms | 0.0 ms |\n| rerank | 0.0 ms | 47.6 ms |\n| LLM (mean) | 0.0 ms | 0.0 ms |\n| End-to-end (mean) | 73.7 ms | 122.4 ms |\n\n## Category breakdown (phase5)\n\n| Category | N | Recall@5 | Accuracy | Recall@5 (base) | Accuracy (base) |\n| --- | --- | --- | --- | --- | --- |\n| edge | 5 | 1.0000 | 0.4000 | 1.0000 | 0.2000 |\n| entity | 8 | 0.8750 | 0.3750 | 0.3750 | 0.1250 |\n| keyword | 6 | 0.8333 | 0.5000 | 0.6667 | 0.6667 |\n| numeric | 21 | 0.8571 | 0.3810 | 0.5238 | 0.2857 |\n| semantic | 3 | 1.0000 | 0.3333 | 0.6667 | 0.3333 |\n| unanswerable | 13 | 0.0000 | 0.5385 | 0.0000 | 0.6923 |\n\n## Failure analysis (answerable, incorrect answers)\n\n| Failure | Baseline | phase5 |\n| --- | --- | --- |\n| confidence_rejection | 0 | 5 |\n| hallucination | 6 | 16 |\n| retrieval_miss | 18 | 0 |\n| wrong_answer | 6 | 5 |\n\n## Notes\n\n- Retrieval metrics are computed over answerable questions only.\n- Faithfulness is the deterministic 0/1/2 rubric (2 = every expected term in\n  answer is also in retrieved evidence).\n- Citation validity is computed only for answers that actually cite sources.\n- Latency excludes model warm-up; it is measured per query on the evaluation DB.\n- Honest caveats: results reflect a 2-document corpus and the models cached on\n  this machine; they are indicative, not a claim about larger corpora.\n\n### Generation provider caveat\n\nAnswer/faithfulness/citation numbers were produced with the **local\ndeterministic provider** (`LocalExtractiveProvider`, an offline test stub that\nquotes the top retrieved chunk verbatim). Gemini (`gemini-2.5-flash`) was\nattempted first but the free tier was quota-exhausted (HTTP 429\n`RESOURCE_EXHAUSTED`) mid-run, so the real LLM could not complete a full pass\ntoday. The stub is *not* representative of production answer quality, so treat\nthe generation columns as an end-to-end harness check, not as an estimate of\nthe production LLM. Retrieval, confidence-gate and latency numbers are real\nand provider-independent. With a real LLM, some \"unanswerable accepted\"\nquestions would likely still be refused by the model, so the stub overstates\nthe gate's unanswerable failure rate.\n\nFailure labels are approximate diagnostics: with the stub, \"hallucination\"\nlargely means the top reranked chunk did not contain the expected facts\n(rather than the model fabricating content), and phase5 \"confidence_rejection\"\ncoincides with the 5 answerable questions where retrieval found no relevant\nevidence \u2014 i.e. the gate correctly blocked answers on missing evidence.\n"
+}
