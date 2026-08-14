@@ -1,5 +1,5 @@
 /**
- * Conversation API client + types for the CampusRAG dashboard.
+ * Conversation API client + types for the DocMind dashboard.
  */
 
 import { apiDelete, apiGet, apiPost } from "@/lib/api";

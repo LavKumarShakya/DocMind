@@ -1,5 +1,5 @@
 /**
- * Admin API client + types for the CampusRAG admin dashboard.
+ * Admin API client + types for the DocMind admin dashboard.
  */
 
 import { apiGet, apiPatch } from "@/lib/api";

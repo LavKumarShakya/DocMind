@@ -1,8 +1,8 @@
-# CampusRAG
+# DocMind
 
 **University knowledge retrieval and question-answering platform.**
 
-CampusRAG lets students and faculty ask natural-language questions about
+DocMind lets students and faculty ask natural-language questions about
 official university documents (academic regulations, examination ordinances,
 attendance policies, syllabi, scholarships, placement guidelines, hostel
 rules, circulars, and more). Answers are grounded in the uploaded documents,
@@ -317,7 +317,7 @@ gate). Results live in `backend/evaluation/results/` (`baseline.json`,
 - **Chat UX hardening** — the dashboard chat no longer loses your question on a
   failed request (the input is restored), message state updates use functional
   setters (no stale-closure double renders), and the loading indicator now
-  reads *"CampusRAG is searching your documents…"* with an accessible
+  reads *"DocMind is searching your documents…"* with an accessible
   `role="status"`.
 - **Configuration clarity** — `.env.example` files and `docker-compose.yml`
   now carry explicit "production-sensitive" notes next to the dev-default
@@ -480,7 +480,7 @@ Gemini-backed chat endpoint, set `GEMINI_API_KEY` in the root `.env` (read by
 | `POSTGRES_USER/PASSWORD/DB` | PostgreSQL credentials (used by Compose). |
 | `SECRET_KEY` | JWT signing key (used from Phase 2). |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT lifetime. |
-| `TEST_DATABASE_URL` | Dedicated test database (tests create it if missing; defaults to `campusrag_test`). |
+| `TEST_DATABASE_URL` | Dedicated test database (tests create it if missing; defaults to `docmind_test`). |
 | `CORS_ORIGINS` | Comma-separated allowed browser origins. |
 | `DEBUG` | Enables verbose logging. |
 | `EMBEDDING_DIM` | Vector dimension of the embedding model (768 for BGE-base). Must equal the model's output. |
@@ -610,7 +610,7 @@ npm run build          # production build
 
 ### Tests
 
-Backend tests use a dedicated database (default `campusrag_test`) so they never
+Backend tests use a dedicated database (default `docmind_test`) so they never
 touch development data. The test suite creates the test database automatically
 if it is missing.
 
@@ -679,7 +679,7 @@ backend. Endpoints planned across the project:
   server-side regardless of the UI.
 - Tokens: HS256 signed with `SECRET_KEY`, expiry `ACCESS_TOKEN_EXPIRE_MINUTES`
   (default 30). On the frontend the token lives in `localStorage` under
-  `campusrag_token` (dev-tier persistence; passwords are never stored).
+  `docmind_token` (dev-tier persistence; passwords are never stored).
 
 Errors use a consistent envelope — never raw stack traces:
 
@@ -834,7 +834,7 @@ test. Categories: semantic, keyword, entity, numeric, multi-fact, edge
 `relevant_pages` and `supporting_text` fragments used for relevance judgement.
 
 **Modes** — the same 56 questions run through the real production services on
-an isolated `campusrag_eval` database:
+an isolated `docmind_eval` database:
 
 - `baseline` (Phase 4): single dense pgvector lookup, no confidence gate.
 - `phase5` (Phase 5): dense + BM25 candidate pools → weight fusion →
@@ -1019,7 +1019,7 @@ not undiscovered bugs.
 
 ## Deployment
 
-CampusRAG ships as a Docker Compose stack (database + backend + frontend) for
+DocMind ships as a Docker Compose stack (database + backend + frontend) for
 single-host deployments. There is no shared hosted instance.
 
 **Production checklist**

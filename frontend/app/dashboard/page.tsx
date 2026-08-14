@@ -171,7 +171,7 @@ function ConversationThread({
           )}
         >
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-            {message.role === "USER" ? "You" : "CampusRAG"}
+            {message.role === "USER" ? "You" : "DocMind"}
           </p>
           <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-zinc-800">
             {message.content
@@ -199,7 +199,7 @@ function ConversationThread({
       {asking && (
         <div className="flex items-center gap-2 text-sm text-zinc-500" role="status">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          CampusRAG is searching your documents…
+          DocMind is searching your documents…
         </div>
       )}
     </div>

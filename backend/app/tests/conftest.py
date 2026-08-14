@@ -1,6 +1,6 @@
 """Shared pytest fixtures.
 
-Tests run against a dedicated PostgreSQL database (``campusrag_test``), not
+Tests run against a dedicated PostgreSQL database (``docmind_test``), not
 the development database. The schema is created with ``Base.metadata.create_all``
 which is kept in sync with the ORM models by ``alembic check``.
 """
@@ -22,7 +22,7 @@ from app.main import app
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
-    settings.DATABASE_URL.rsplit("/", 1)[0] + "/campusrag_test",
+    settings.DATABASE_URL.rsplit("/", 1)[0] + "/docmind_test",
 )
 def _ensure_test_database() -> None:
     """Create the test database if it does not exist."""
@@ -30,10 +30,10 @@ def _ensure_test_database() -> None:
     engine = create_engine(base_url, isolation_level="AUTOCOMMIT")
     with engine.connect() as conn:
         exists = conn.execute(
-            text("SELECT 1 FROM pg_database WHERE datname = 'campusrag_test'")
+            text("SELECT 1 FROM pg_database WHERE datname = 'docmind_test'")
         ).scalar()
         if not exists:
-            conn.execute(text("CREATE DATABASE campusrag_test"))
+            conn.execute(text("CREATE DATABASE docmind_test"))
     engine.dispose()
 
 

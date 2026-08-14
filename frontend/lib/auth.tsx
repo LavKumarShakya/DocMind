@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Authentication state for the CampusRAG frontend.
+ * Authentication state for the DocMind frontend.
  *
  * A single React context owns login / register / logout and restores the
  * current user from the persisted JWT on first load (via `/api/auth/me`).

@@ -1,5 +1,5 @@
 /**
- * Chat + search API client and types for the CampusRAG dashboard.
+ * Chat + search API client and types for the DocMind dashboard.
  */
 
 import { apiPost } from "@/lib/api";

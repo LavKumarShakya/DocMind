@@ -55,7 +55,7 @@ function LoginForm() {
             <BookOpen className="h-5 w-5" aria-hidden />
           </span>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Sign in to CampusRAG
+            Sign in to DocMind
           </h1>
           <p className="text-sm text-zinc-500">
             Access university knowledge and Q&amp;A.

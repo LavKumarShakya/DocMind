@@ -20,14 +20,14 @@ class Settings(BaseSettings):
     )
 
     # --- Application ---
-    APP_NAME: str = "CampusRAG"
+    APP_NAME: str = "DocMind"
     APP_VERSION: str = "0.1.0"
     APP_ENV: str = "development"
     DEBUG: bool = True
 
     # --- Database ---
     DATABASE_URL: str = (
-        "postgresql+psycopg://campusrag:campusrag_dev_password@localhost:5432/campusrag"
+        "postgresql+psycopg://docmind:docmind_dev_password@localhost:5432/docmind"
     )
 
     # --- Auth (used from Phase 2 onward, defined here for centralization) ---

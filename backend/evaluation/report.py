@@ -224,7 +224,7 @@ def build_comparison(baseline: dict, phase5: dict) -> dict:
     for entry in meta_p.get("corpus", []):
         corpus_lines.append(f"- `{entry['title']}` — {entry['chunks']} chunks ({'reused' if entry.get('reused') else 'ingested'})")
 
-    report = f"""# CampusRAG Phase 7 — Evaluation Report
+    report = f"""# DocMind Phase 7 — Evaluation Report
 
 Dataset `{p.get("dataset_version", meta_p.get("dataset_version", "?"))}` · {p.get("questions_total", 0)} questions ·
 baseline run {meta_b.get("timestamp_utc", "?")} · phase5 run {meta_p.get("timestamp_utc", "?")}

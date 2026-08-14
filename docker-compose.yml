@@ -1,16 +1,16 @@
-name: campusrag
+name: docmind
 
 services:
   db:
     image: pgvector/pgvector:pg16
-    container_name: campusrag-db
+    container_name: docmind-db
     restart: unless-stopped
     # PRODUCTION-SENSITIVE: override POSTGRES_PASSWORD with a strong secret
     # (never the dev default) when deploying anywhere shared.
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-campusrag}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campusrag_dev_password}
-      POSTGRES_DB: ${POSTGRES_DB:-campusrag}
+      POSTGRES_USER: ${POSTGRES_USER:-docmind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docmind_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-docmind}
     ports:
       - "5432:5432"
     volumes:
@@ -23,11 +23,11 @@ services:
 
   backend:
     build: ./backend
-    container_name: campusrag-backend
+    container_name: docmind-backend
     restart: unless-stopped
     environment:
       # The host part is `db` (compose service name) inside the Docker network.
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-campusrag}:${POSTGRES_PASSWORD:-campusrag_dev_password}@db:5432/${POSTGRES_DB:-campusrag}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-docmind}:${POSTGRES_PASSWORD:-docmind_dev_password}@db:5432/${POSTGRES_DB:-docmind}
       APP_ENV: ${APP_ENV:-development}
       DEBUG: ${DEBUG:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
@@ -69,7 +69,7 @@ services:
 
   frontend:
     build: ./frontend
-    container_name: campusrag-frontend
+    container_name: docmind-frontend
     restart: unless-stopped
     environment:
       # Browsers call the API from the host, so localhost works for local dev.

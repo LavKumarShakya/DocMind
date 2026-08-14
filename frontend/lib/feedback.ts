@@ -1,5 +1,5 @@
 /**
- * Feedback API client + types for the CampusRAG dashboard.
+ * Feedback API client + types for the DocMind dashboard.
  */
 
 import { apiPost } from "@/lib/api";

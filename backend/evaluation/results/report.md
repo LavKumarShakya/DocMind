@@ -1,4 +1,4 @@
-# CampusRAG Phase 7 — Evaluation Report
+# DocMind Phase 7 — Evaluation Report
 
 Dataset `1.0` · 56 questions ·
 baseline run 2026-08-14T06:58:51.218286+00:00 · phase5 run 2026-08-14T06:59:17.457269+00:00

@@ -18,7 +18,7 @@ setup_logging()
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="CampusRAG - university knowledge retrieval and question-answering platform.",
+    description="DocMind - university knowledge retrieval and question-answering platform.",
     docs_url="/docs",
     redoc_url="/redoc",
 )

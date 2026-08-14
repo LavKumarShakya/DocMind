@@ -1,5 +1,5 @@
 /**
- * Document API client + types for the CampusRAG dashboard.
+ * Document API client + types for the DocMind dashboard.
  */
 
 import { apiDelete, apiGet, apiPatch, apiPost, apiUpload } from "@/lib/api";

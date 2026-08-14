@@ -1,7 +1,7 @@
 """Phase 7 evaluation runner.
 
-Run the version-controlled dataset against the real CampusRAG pipeline on an
-isolated evaluation database (``campusrag_eval``), then serialize raw per-
+Run the version-controlled dataset against the real DocMind pipeline on an
+isolated evaluation database (``docmind_eval``), then serialize raw per-
 question results to JSON.
 
 Usage (from ``backend``):
@@ -71,7 +71,7 @@ logger = logging.getLogger("evaluation")
 
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 STORAGE_DIR = Path(__file__).resolve().parent / "storage"
-EVAL_DB_NAME = "campusrag_eval"
+EVAL_DB_NAME = "docmind_eval"
 
 # Throttle + retry for paid/rate-limited LLM providers. Gemini free tier allows
 # ~5 requests/minute; the runner enforces a minimum interval and retries
@@ -143,11 +143,11 @@ def _ensure_schema(engine) -> None:
 def _ensure_eval_user(Session) -> User:
     session = Session()
     try:
-        user = session.query(User).filter(User.email == "eval-runner@campusrag.local").first()
+        user = session.query(User).filter(User.email == "eval-runner@docmind.local").first()
         if user is None:
             user = User(
                 name="Eval Runner",
-                email="eval-runner@campusrag.local",
+                email="eval-runner@docmind.local",
                 password_hash=hash_password("eval-password"),
                 role=Role.ADMIN,
             )
@@ -684,7 +684,7 @@ def _compare(args) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="CampusRAG Phase 7 evaluation runner")
+    parser = argparse.ArgumentParser(description="DocMind Phase 7 evaluation runner")
     parser.add_argument("--mode", choices=["baseline", "phase5"], default="phase5")
     parser.add_argument("--compare", action="store_true", help="compare existing results")
     parser.add_argument("--limit", type=int, default=None)

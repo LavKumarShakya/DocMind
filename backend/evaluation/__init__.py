@@ -1,4 +1,4 @@
-"""Phase 7 evaluation framework for CampusRAG.
+"""Phase 7 evaluation framework for DocMind.
 
 Reproducible, version-controlled evaluation of retrieval quality, ranking,
 confidence gating, citations, faithfulness, correctness and latency. Two modes
