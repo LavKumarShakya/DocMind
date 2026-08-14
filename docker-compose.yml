@@ -5,6 +5,8 @@ services:
     image: pgvector/pgvector:pg16
     container_name: campusrag-db
     restart: unless-stopped
+    # PRODUCTION-SENSITIVE: override POSTGRES_PASSWORD with a strong secret
+    # (never the dev default) when deploying anywhere shared.
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-campusrag}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campusrag_dev_password}
@@ -29,6 +31,8 @@ services:
       APP_ENV: ${APP_ENV:-development}
       DEBUG: ${DEBUG:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # PRODUCTION-SENSITIVE: set a strong random SECRET_KEY and a real
+      # GEMINI_API_KEY via the environment before exposing the app.
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-me-in-production}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       EMBEDDING_DIM: ${EMBEDDING_DIM:-768}

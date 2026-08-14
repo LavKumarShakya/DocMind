@@ -9,9 +9,12 @@ rules, circulars, and more). Answers are grounded in the uploaded documents,
 are produced by a Retrieval-Augmented Generation (RAG) pipeline, and include
 structured citations pointing to the source document and page.
 
-> **Status: Phase 6 (Product Features) complete.** This README documents both
-> the current implementation and the full planned system. Later phases build
-> incrementally on this foundation (see [Development roadmap](#development-roadmap)).
+> **Status: Phase 8 (Polish, Hardening & Release Preparation) complete.** All
+> eight planned phases are implemented and regression-tested. This README
+> documents the full system, its measured evaluation results, and the remaining
+> known limitations (see [Development roadmap](#development-roadmap),
+> [Evaluation methodology](#evaluation-methodology) and
+> [Known limitations](#known-limitations)).
 
 ---
 
@@ -32,6 +35,10 @@ structured citations pointing to the source document and page.
 13. [Evaluation methodology](#evaluation-methodology)
 14. [Development roadmap](#development-roadmap)
 15. [Future improvements](#future-improvements)
+16. [Known limitations](#known-limitations)
+17. [Security](#security)
+18. [Deployment](#deployment)
+19. [Demo checklist](#demo-checklist)
 
 ---
 
@@ -300,6 +307,29 @@ gate). Results live in `backend/evaluation/results/` (`baseline.json`,
 `phase5.json`, `comparison.json`, `report.md`). See
 [Evaluation methodology](#evaluation-methodology).
 
+**Phase 8 (done): final polish, hardening and release preparation.**
+
+- **Responsive navigation** — the three authenticated pages (dashboard,
+  search, admin) now share a single `SiteHeader` component
+  (`frontend/components/site-header.tsx`) with a mobile hamburger menu, so
+  every page is reachable on phones (320 px and up) and the active link is
+  highlighted consistently via `usePathname`.
+- **Chat UX hardening** — the dashboard chat no longer loses your question on a
+  failed request (the input is restored), message state updates use functional
+  setters (no stale-closure double renders), and the loading indicator now
+  reads *"CampusRAG is searching your documents…"* with an accessible
+  `role="status"`.
+- **Configuration clarity** — `.env.example` files and `docker-compose.yml`
+  now carry explicit "production-sensitive" notes next to the dev-default
+  `SECRET_KEY` / `POSTGRES_PASSWORD` placeholders.
+- **Regression & release verification** — full suite re-run (241 tests),
+  `alembic check` clean, frontend `typecheck` + production `build`, and a
+  clean `docker compose up --build` with health-checked startup of all three
+  services. A final secrets scan confirmed no API keys or credentials are
+  tracked in version control.
+- Backend test suite remains at **241 tests** covering every phase from
+  foundation through evaluation.
+
 ---
 
 ## Tech stack
@@ -375,7 +405,7 @@ Notable compatibility decisions:
 │   │       ├── retrieval_service.py# pgvector cosine retrieval + permissions
 │   │       ├── retrieval_types.py  # shared RetrievalCandidate (Phase 5)
 │   │       └── storage_service.py  # local file storage (replaceable)
-│   ├── tests/                      # backend tests (auth, RBAC, docs, RAG, product, evaluation; 239 passing)
+│   ├── tests/                      # backend tests (auth, RBAC, docs, RAG, product, evaluation; 241 passing)
 │   ├── evaluation/                 # Phase 7 harness: dataset.json, corpus/, metrics, modes, runner, results/
 │   ├── alembic/                    # migration env + versions/
 │   ├── alembic.ini
@@ -385,7 +415,7 @@ Notable compatibility decisions:
 │   └── .env.example
 ├── frontend/
 │   ├── app/                        # Next.js App Router pages (login, register, dashboard, search, admin)
-│   ├── components/                 # ui primitives, RequireAuth guard
+│   ├── components/                 # ui primitives, RequireAuth guard, shared SiteHeader (mobile nav)
 │   ├── lib/                        # api client, auth context/helpers
 │   ├── package.json
 │   ├── tsconfig.json
@@ -590,14 +620,15 @@ pip install -r requirements-dev.txt     # pytest + httpx
 python -m pytest app/tests -q
 ```
 
-Current suite: **193 tests** covering authentication, RBAC, document
+Current suite: **241 tests** covering authentication, RBAC, document
 validation/upload, extraction, chunking, embeddings, processing status
-transitions, the full document API, and the Phase 4 RAG pipeline (retrieval
+transitions, the full document API, the Phase 4 RAG pipeline (retrieval
 ranking + permission filtering, context assembly, LLM provider, citations,
 chat/search API), Phase 5 retrieval (BM25 ranking and permissions, score
 normalization, hybrid fusion, reranker ordering/metadata, confidence gates),
-and Phase 6 product features (conversations, feedback, versioning, admin,
-user-facing search).
+Phase 6 product features (conversations, feedback, versioning, admin,
+user-facing search) and the Phase 7 evaluation harness
+(`test_evaluation_*.py`).
 
 ---
 
@@ -900,7 +931,7 @@ improve any number.
 | 5 | Advanced retrieval: BM25, hybrid ranking, cross-encoder reranking, confidence threshold | ✅ Done |
 | 6 | Product features: conversations, feedback, versioning, role-based access, admin, search | ✅ Done |
 | 7 | Evaluation: dataset, retrieval metrics, RAG metrics, report | ✅ Done |
-| 8 | Polish: error handling, tests, loading/empty states, responsive UI, docs | ⏳ Next |
+| 8 | Polish: error handling, tests, loading/empty states, responsive UI, docs | ✅ Done |
 
 Each phase keeps the project runnable.
 
@@ -916,6 +947,136 @@ Each phase keeps the project runnable.
 - Fine-grained analytics over feedback and failed-document errors.
 - Deployment hardening: reverse proxy (TLS), secrets manager, read replicas,
   pgvector index tuning (ivfflat vs hnsw, `lists`/`m` parameters).
+
+---
+
+## Known limitations
+
+These are intentional, documented trade-offs of the current implementation,
+not undiscovered bugs.
+
+- **Small evaluation corpus.** Measured retrieval/confidence numbers are from a
+  2-document, 56-question evaluation set. Recall@1/3/5/10 and MRR coincide on
+  this corpus (a relevant chunk either ranks #1 or is missed entirely), so they
+  are indicative but not a claim about larger corpora.
+- **Confidence gate is not a hallucination shield.** Phase 7 measured a **false
+  acceptance rate of 46.15%** (6 of 13 unanswerable questions were accepted;
+  the local evaluation stub then answered them incorrectly). A production LLM
+  would likely refuse some of those, but the gate alone is insufficient — do
+  not rely on it to refuse out-of-scope questions.
+- **5 answerable questions are falsely rejected** (Q004, Q016, Q024, Q030,
+  Q042): their evidence is in the corpus but retrieval misses it (dense cosine
+  below the 0.65 cutoff and a BM25 AND-term mismatch). Tuning thresholds or the
+  fusion weights could trade this off against more false acceptance; none was
+  tuned for Phase 7.
+- **`section` citations are often `null`.** Phase 3 chunking does not populate
+  a section column, so citations surface `section=None` rather than fabricating
+  one.
+- **Gemini free-tier quota.** The Gemini-backed answer column in the Phase 7
+  report was produced with the local deterministic provider because the free
+  tier was quota-exhausted (HTTP 429). Retrieval, confidence-gate and latency
+  numbers are provider-independent and real.
+- **Single-server dev posture.** Local file storage, in-process (CPU)
+  embedding/reranking and a synchronous ingestion request mean uploads block
+  the API while processing. Designed for a demo/small-instance workload; see
+  [Future improvements](#future-improvements).
+- **JWT in `localStorage`.** Dev-tier session persistence; a hardened
+  deployment should move to httpOnly cookies or a token store (see
+  [Security](#security)).
+
+---
+
+## Security
+
+- **Server-side authorization everywhere.** Every protected endpoint resolves
+  the user from the JWT (`app/api/deps.py`) and enforces roles via
+  `require_role`. Retrieval, documents, conversations and feedback all apply
+  ownership / visibility rules in the backend — the frontend is never trusted.
+  Non-owners of a conversation or document receive a 404 (existence hidden) or
+  403 as appropriate; `STUDENT`/`FACULTY` cannot reach admin endpoints; the
+  last `ADMIN` cannot be demoted.
+- **Prompt-injection hardening.** The system prompt (`app/rag/prompts.py`)
+  treats retrieval evidence as untrusted data and instructs the model to never
+  follow instructions embedded in it. Evidence is delimited and labelled
+  `[n]` before it reaches the LLM.
+- **No secrets in version control.** A Phase 8 secrets scan (Google API key,
+  `sk-`-style tokens, `SECRET_KEY`/password assignments) over all tracked
+  files found only the documented dev placeholders. Real keys live only in
+  untracked `.env` files (git-ignored).
+- **Credential hygiene.** Passwords are bcrypt-hashed and never logged;
+  registration rejects client-supplied roles; login returns the same error for
+  an unknown email and a wrong password (no user enumeration); API responses
+  never expose password hashes, storage paths or raw stack traces (structured
+  `{error:{code,message}}` envelope).
+- **Upload validation.** PDFs are rejected by extension, MIME type, `%PDF-`
+  magic bytes, size and empty content before any extraction.
+- **Production hardening checklist.** Replace `SECRET_KEY` and
+  `POSTGRES_PASSWORD` with strong random values, set `CORS_ORIGINS` to the real
+  frontend origin, set `DEBUG=false`, provide a real `GEMINI_API_KEY`, and move
+  JWT storage to httpOnly cookies. See [Deployment](#deployment).
+
+---
+
+## Deployment
+
+CampusRAG ships as a Docker Compose stack (database + backend + frontend) for
+single-host deployments. There is no shared hosted instance.
+
+**Production checklist**
+
+1. Set strong, unique values for `SECRET_KEY` and `POSTGRES_PASSWORD` (root
+   `.env`; both have non-production dev defaults in `docker-compose.yml`).
+2. Set `CORS_ORIGINS` to your real frontend origin(s) and `DEBUG=false`.
+3. Provide a real `GEMINI_API_KEY` (or set `LLM_PROVIDER=local` for a
+   non-production offline answerer).
+4. Put the app behind a reverse proxy (nginx / Caddy) that terminates TLS and
+   proxies `/` to the frontend (:3000) and `/api` to the backend (:8000).
+5. Back up the `pgdata` volume and the `STORAGE_DIR` document storage.
+6. Verify migrations: the backend runs `alembic upgrade head` on startup and
+   `python -m alembic check` reports no drift.
+
+```bash
+docker compose up -d --build
+```
+
+Then verify `GET http://<host>/api/health` → `{"status":"ok", ...}`.
+
+**Scaling considerations** (not implemented): see
+[Future improvements](#future-improvements) — background ingestion, read
+replicas and managed storage would be the first steps for a larger deployment.
+
+---
+
+## Demo checklist
+
+A 5-minute walkthrough against `docker compose up`:
+
+1. **Landing page** — `http://localhost:3000` renders the live backend health
+   card (API status `ok`, database `ok`).
+2. **Registration** — "Create account"; a new user is always a `STUDENT`.
+3. **Login** — sign in; the dashboard loads your empty conversations list and
+   document list.
+4. **Upload** — drop in `backend/evaluation/corpus/academic_regulations.pdf`;
+   it appears as `UPLOADED`.
+5. **Process** — "Process" → status becomes `ACTIVE` (first run downloads the
+   BGE embedding model, so allow a minute).
+6. **Ask a grounded question** — e.g. *"What is the minimum attendance
+   requirement?"* → a sourced answer with a "Sources (n)" list carrying page
+   numbers; rate it 👍/👎.
+7. **Persistent conversations** — the conversation appears in the sidebar with
+   a generated title; follow up with a second question; reload the page and
+   reopen it.
+8. **Chat failure behavior** — submit a question with the backend stopped: the
+   input keeps your question and an error alert appears (Phase 8 fix).
+9. **Search** — `/search` returns clean, permission-aware results with match
+   percentages and no raw scores; an out-of-scope query shows the empty state.
+10. **Mobile** — narrow the window below 640 px: the nav collapses into the
+    hamburger menu, and Dashboard / Search / Admin all remain reachable.
+11. **Admin (optional)** — login as an `ADMIN` user (promote one via the
+    `PATCH /api/admin/users/{id}/role` endpoint) to see stats, the user list
+    and role management; a non-admin is blocked server-side.
+12. **Versioning** — on a document, "Versions" → "Upload new version" adds a
+    v2 entry; reprocess to make it active.
 
 ---
 

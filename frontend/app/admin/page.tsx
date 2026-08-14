@@ -1,10 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  BookOpen,
   FileText,
   Loader2,
   MessageSquareText,
@@ -15,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { RequireAuth } from "@/components/require-auth";
+import { SiteHeader } from "@/components/site-header";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
@@ -74,7 +73,7 @@ function StatCard({
 }
 
 function AdminShell() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -137,53 +136,7 @@ function AdminShell() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2 font-semibold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
-              <BookOpen className="h-4 w-4" aria-hidden />
-            </span>
-            CampusRAG
-          </div>
-          <nav className="hidden items-center gap-1 text-sm sm:flex">
-            <Link
-              href="/dashboard"
-              className="rounded-lg px-3 py-1.5 text-zinc-600 hover:bg-zinc-100"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/search"
-              className="rounded-lg px-3 py-1.5 text-zinc-600 hover:bg-zinc-100"
-            >
-              Search
-            </Link>
-            {user?.role === "ADMIN" && (
-              <Link
-                href="/admin"
-                className="rounded-lg px-3 py-1.5 font-medium text-indigo-600"
-              >
-                Admin
-              </Link>
-            )}
-          </nav>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-zinc-600 sm:inline">
-              {user?.email}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                logout();
-                router.push("/");
-              }}
-            >
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto max-w-6xl space-y-8 px-6 py-10">
         <section className="flex items-center justify-between">
