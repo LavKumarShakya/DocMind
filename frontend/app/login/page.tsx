@@ -3,7 +3,7 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BookOpen, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -48,23 +48,28 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="space-y-2 text-center">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white">
-            <BookOpen className="h-5 w-5" aria-hidden />
+    <main className="flex min-h-screen items-center justify-center bg-[var(--canvas)] px-6 text-[var(--ink)]">
+      <div className="w-full max-w-sm space-y-8 animate-page-in">
+        {/* Branding */}
+        <div className="space-y-3 text-center">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] bg-[var(--ink)] text-[var(--canvas)] font-bold text-lg">
+            D
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1
+            className="text-3xl tracking-tight"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
             Sign in to DocMind
           </h1>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-[var(--ink-faint)]">
             Access university knowledge and Q&amp;A.
           </p>
         </div>
 
+        {/* Form card */}
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+          className="space-y-5 rounded-[var(--radius-lg)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-7 shadow-[var(--shadow-md)]"
         >
           {justRegistered && (
             <Alert variant="success">Account created. Please sign in.</Alert>
@@ -72,7 +77,10 @@ function LoginForm() {
           {error && <Alert variant="error">{error}</Alert>}
 
           <div className="space-y-1.5">
-            <label htmlFor="email" className="text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="email"
+              className="text-sm font-medium text-[var(--ink-muted)]"
+            >
               Email
             </label>
             <Input
@@ -89,7 +97,7 @@ function LoginForm() {
           <div className="space-y-1.5">
             <label
               htmlFor="password"
-              className="text-sm font-medium text-zinc-700"
+              className="text-sm font-medium text-[var(--ink-muted)]"
             >
               Password
             </label>
@@ -105,14 +113,23 @@ function LoginForm() {
           </div>
 
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+            {submitting && (
+              <Loader2
+                className="h-4 w-4"
+                style={{ animation: "spin 0.7s linear infinite" }}
+                aria-hidden
+              />
+            )}
             Sign in
           </Button>
         </form>
 
-        <p className="text-center text-sm text-zinc-500">
+        <p className="text-center text-sm text-[var(--ink-faint)]">
           New here?{" "}
-          <Link href="/register" className="font-medium text-indigo-600 hover:underline">
+          <Link
+            href="/register"
+            className="font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors duration-150"
+          >
             Create an account
           </Link>
         </p>

@@ -1,5 +1,128 @@
+/* ─── Google Fonts: DM Serif Display (headings) + DM Sans (body) ─── */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Serif+Display:ital@0;1&display=swap");
+
 @import "tailwindcss";
 
+/* ─── Design Tokens ─── */
 :root {
   color-scheme: light;
+
+  /* Ink — text and dark surfaces */
+  --ink:            hsl(220, 25%, 12%);
+  --ink-muted:      hsl(220, 15%, 40%);
+  --ink-faint:      hsl(220, 10%, 62%);
+  --ink-ghost:      hsl(220, 8%, 78%);
+
+  /* Canvas — backgrounds */
+  --canvas:         hsl(38, 30%, 97%);
+  --canvas-raised:  hsl(38, 20%, 100%);
+  --canvas-inset:   hsl(38, 20%, 94%);
+
+  /* Accent — warm amber-orange */
+  --accent:         hsl(28, 85%, 55%);
+  --accent-hover:   hsl(28, 85%, 48%);
+  --accent-faint:   hsl(28, 60%, 95%);
+  --accent-muted:   hsl(28, 50%, 80%);
+
+  /* Edges — borders and dividers */
+  --edge:           hsl(38, 15%, 88%);
+  --edge-strong:    hsl(38, 15%, 78%);
+
+  /* Semantic */
+  --success:        hsl(152, 55%, 40%);
+  --success-faint:  hsl(152, 40%, 94%);
+  --danger:         hsl(0, 65%, 52%);
+  --danger-faint:   hsl(0, 50%, 96%);
+  --info:           hsl(210, 60%, 52%);
+  --info-faint:     hsl(210, 50%, 95%);
+
+  /* Typography */
+  --font-display:   "DM Serif Display", Georgia, "Times New Roman", serif;
+  --font-body:      "DM Sans", system-ui, -apple-system, sans-serif;
+
+  /* Radii */
+  --radius-sm:      6px;
+  --radius-md:      10px;
+  --radius-lg:      14px;
+  --radius-full:    9999px;
+
+  /* Shadows */
+  --shadow-sm:      0 1px 2px hsl(220 25% 12% / 0.04);
+  --shadow-md:      0 2px 8px hsl(220 25% 12% / 0.06), 0 1px 2px hsl(220 25% 12% / 0.04);
+  --shadow-lg:      0 8px 24px hsl(220 25% 12% / 0.08), 0 2px 6px hsl(220 25% 12% / 0.04);
+}
+
+/* ─── Base Reset ─── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+  background-color: var(--canvas);
+}
+
+/* ─── Typography ─── */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Selection ─── */
+::selection {
+  background-color: var(--accent-faint);
+  color: var(--ink);
+}
+
+/* ─── Scrollbar (Webkit) ─── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--edge-strong);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ink-ghost);
+}
+
+/* ─── Keyframes ─── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+
+/* ─── Utility: page entrance ─── */
+.animate-page-in {
+  animation: fade-in 0.35s ease-out both;
 }

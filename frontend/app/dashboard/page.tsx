@@ -7,7 +7,6 @@ import {
   MessageSquareText,
   Plus,
   RefreshCw,
-  Search,
   Send,
   ThumbsDown,
   ThumbsUp,
@@ -47,45 +46,64 @@ import {
 import { submitFeedback } from "@/lib/feedback";
 import { cn } from "@/lib/utils";
 
-const statusStyles: Record<DocumentStatus, string> = {
-  UPLOADED: "bg-blue-50 text-blue-700 border-blue-200",
-  PROCESSING: "bg-amber-50 text-amber-700 border-amber-200",
-  ACTIVE: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  FAILED: "bg-red-50 text-red-700 border-red-200",
-  ARCHIVED: "bg-zinc-100 text-zinc-600 border-zinc-200",
+/* ─── Status Badge ─── */
+
+const statusColors: Record<DocumentStatus, string> = {
+  UPLOADED:
+    "border-[var(--info)] bg-[var(--info-faint)] text-[var(--info)]",
+  PROCESSING:
+    "border-[var(--accent)] bg-[var(--accent-faint)] text-[var(--accent-hover)]",
+  ACTIVE:
+    "border-[var(--success)] bg-[var(--success-faint)] text-[var(--success)]",
+  FAILED:
+    "border-[var(--danger)] bg-[var(--danger-faint)] text-[var(--danger)]",
+  ARCHIVED:
+    "border-[var(--edge-strong)] bg-[var(--canvas-inset)] text-[var(--ink-faint)]",
 };
 
 function StatusBadge({ status }: { status: DocumentStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
-        statusStyles[status],
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+        statusColors[status],
       )}
     >
-      {status === "PROCESSING" ? "Processing" : status.charAt(0) + status.slice(1).toLowerCase()}
+      {status === "PROCESSING"
+        ? "Processing"
+        : status.charAt(0) + status.slice(1).toLowerCase()}
     </span>
   );
 }
 
+/* ─── Citation List ─── */
+
 function CitationList({ citations }: { citations: Citation[] }) {
   if (citations.length === 0) return null;
   return (
-    <div className="mt-3 border-t border-zinc-100 pt-2">
-      <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-400">
+    <div className="mt-3 border-t border-[var(--edge)] pt-3">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-faint)]">
         Sources ({citations.length})
       </p>
       <ul className="space-y-1.5">
         {citations.map((citation, i) => {
           const label =
             citation.section ??
-            (citation.page_number != null ? `p. ${citation.page_number}` : null);
+            (citation.page_number != null
+              ? `p.\u00A0${citation.page_number}`
+              : null);
           return (
-            <li key={`${citation.chunk_id}-${i}`} className="text-xs text-zinc-600">
-              <span className="font-medium text-zinc-800">
+            <li
+              key={`${citation.chunk_id}-${i}`}
+              className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)]"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-muted)] shrink-0" />
+              <span className="font-medium text-[var(--ink)]">
                 {citation.document_title}
               </span>
-              {label && <span className="text-zinc-400"> · {label}</span>}
+              {label && (
+                <span className="text-[var(--ink-faint)]">· {label}</span>
+              )}
             </li>
           );
         })}
@@ -93,6 +111,8 @@ function CitationList({ citations }: { citations: Citation[] }) {
     </div>
   );
 }
+
+/* ─── Feedback Buttons ─── */
 
 function FeedbackButtons({ messageId }: { messageId: string }) {
   const [sending, setSending] = useState(false);
@@ -112,39 +132,41 @@ function FeedbackButtons({ messageId }: { messageId: string }) {
   }
 
   return (
-    <div className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
-      <span className="uppercase tracking-wide">Was this helpful?</span>
+    <div className="mt-2.5 flex items-center gap-2 text-[11px] text-[var(--ink-faint)]">
+      <span className="uppercase tracking-[0.08em] font-medium">Helpful?</span>
       <button
         type="button"
         onClick={() => rate(5)}
         disabled={sending || sent !== null}
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition-colors",
+          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition-all duration-150",
           sent === 5
-            ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-            : "border-zinc-200 hover:bg-zinc-50",
+            ? "border-[var(--success)] bg-[var(--success-faint)] text-[var(--success)]"
+            : "border-[var(--edge)] hover:border-[var(--success)] hover:bg-[var(--success-faint)] hover:text-[var(--success)]",
         )}
         aria-label="Helpful"
       >
-        <ThumbsUp className="h-3.5 w-3.5" aria-hidden />
+        <ThumbsUp className="h-3 w-3" aria-hidden />
       </button>
       <button
         type="button"
         onClick={() => rate(1)}
         disabled={sending || sent !== null}
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition-colors",
+          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition-all duration-150",
           sent === 1
-            ? "border-red-300 bg-red-50 text-red-700"
-            : "border-zinc-200 hover:bg-zinc-50",
+            ? "border-[var(--danger)] bg-[var(--danger-faint)] text-[var(--danger)]"
+            : "border-[var(--edge)] hover:border-[var(--danger)] hover:bg-[var(--danger-faint)] hover:text-[var(--danger)]",
         )}
         aria-label="Not helpful"
       >
-        <ThumbsDown className="h-3.5 w-3.5" aria-hidden />
+        <ThumbsDown className="h-3 w-3" aria-hidden />
       </button>
     </div>
   );
 }
+
+/* ─── Conversation Thread ─── */
 
 function ConversationThread({
   messages,
@@ -156,24 +178,32 @@ function ConversationThread({
   return (
     <div className="space-y-4">
       {messages.length === 0 && !asking && (
-        <p className="rounded-lg border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500">
-          Ask a question to start this conversation.
-        </p>
+        <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--edge-strong)] p-8 text-center">
+          <p
+            className="text-lg text-[var(--ink-faint)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Ask a question to begin.
+          </p>
+          <p className="mt-1 text-sm text-[var(--ink-ghost)]">
+            Your answers are grounded in the documents you can view.
+          </p>
+        </div>
       )}
       {messages.map((message) => (
         <div
           key={message.id}
           className={cn(
-            "rounded-lg border p-4",
+            "rounded-[var(--radius-md)] border p-4",
             message.role === "USER"
-              ? "border-indigo-200 bg-indigo-50/60"
-              : "border-zinc-100 bg-zinc-50",
+              ? "border-[var(--accent-muted)] bg-[var(--accent-faint)] ml-8"
+              : "border-[var(--edge)] bg-[var(--canvas-raised)] mr-8 border-l-[3px] border-l-[var(--ink)]",
           )}
         >
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-faint)]">
             {message.role === "USER" ? "You" : "DocMind"}
           </p>
-          <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-zinc-800">
+          <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--ink)]">
             {message.content
               .replace(/\s*Sources:\s*\[[\d,\s]+\]\s*$/, "")
               .trim()}
@@ -197,14 +227,23 @@ function ConversationThread({
         </div>
       ))}
       {asking && (
-        <div className="flex items-center gap-2 text-sm text-zinc-500" role="status">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+        <div
+          className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-4 mr-8 border-l-[3px] border-l-[var(--accent)] text-sm text-[var(--ink-muted)]"
+          role="status"
+        >
+          <Loader2
+            className="h-4 w-4 text-[var(--accent)]"
+            style={{ animation: "spin 0.7s linear infinite" }}
+            aria-hidden
+          />
           DocMind is searching your documents…
         </div>
       )}
     </div>
   );
 }
+
+/* ─── Chat Panel ─── */
 
 function ChatPanel({
   conversationId,
@@ -241,36 +280,56 @@ function ChatPanel({
   }
 
   return (
-    <section className="flex flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center gap-2">
-        <MessageSquareText className="h-4 w-4 text-zinc-500" aria-hidden />
-        <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+    <section className="flex flex-col rounded-[var(--radius-lg)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-6 shadow-[var(--shadow-sm)]">
+      <div className="flex items-center gap-2.5">
+        <MessageSquareText className="h-4 w-4 text-[var(--accent)]" aria-hidden />
+        <h2
+          className="text-lg text-[var(--ink)]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
           Ask an academic question
         </h2>
       </div>
-      <p className="mt-1 text-sm text-zinc-500">
-        Answers are grounded in the documents you can view.
-      </p>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-5 space-y-4">
         <ConversationThread messages={messages} asking={asking} />
         <div ref={bottomRef} />
       </div>
 
-      {chatError && <Alert className="mt-4" variant="error">{chatError}</Alert>}
+      {chatError && (
+        <Alert className="mt-4" variant="error">
+          {chatError}
+        </Alert>
+      )}
 
-      <form onSubmit={handleAsk} className="mt-4 flex items-center gap-3 border-t border-zinc-100 pt-4">
+      <form
+        onSubmit={handleAsk}
+        className="mt-5 flex items-center gap-3 border-t border-[var(--edge)] pt-5"
+      >
         <Input
           className="flex-1"
-          placeholder={conversationId ? "Follow-up question…" : "e.g. What is the attendance policy?"}
+          placeholder={
+            conversationId
+              ? "Follow-up question…"
+              : "e.g. What is the attendance policy?"
+          }
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           disabled={asking}
           maxLength={2000}
         />
-        <Button type="submit" disabled={!question.trim() || asking} className="self-end">
+        <Button
+          type="submit"
+          variant="accent"
+          disabled={!question.trim() || asking}
+          className="self-end"
+        >
           {asking ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            <Loader2
+              className="h-4 w-4"
+              style={{ animation: "spin 0.7s linear infinite" }}
+              aria-hidden
+            />
           ) : (
             <Send className="h-4 w-4" aria-hidden />
           )}
@@ -280,6 +339,8 @@ function ChatPanel({
     </section>
   );
 }
+
+/* ─── Version History ─── */
 
 function VersionHistory({ docId }: { docId: string }) {
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
@@ -319,20 +380,24 @@ function VersionHistory({ docId }: { docId: string }) {
 
   if (state === "loading") {
     return (
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+      <div className="flex items-center gap-2 text-xs text-[var(--ink-faint)]">
+        <Loader2
+          className="h-3.5 w-3.5 text-[var(--accent)]"
+          style={{ animation: "spin 0.7s linear infinite" }}
+          aria-hidden
+        />
         Loading versions…
       </div>
     );
   }
 
   return (
-    <div className="mt-3 border-t border-zinc-100 pt-3">
+    <div className="mt-4 border-t border-[var(--edge)] pt-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-faint)]">
           Versions ({versions.length})
         </p>
-        <label className="cursor-pointer text-xs font-medium text-indigo-600 hover:underline">
+        <label className="cursor-pointer text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors duration-150">
           {uploading ? "Uploading…" : "Upload new version"}
           <input
             ref={fileRef}
@@ -344,15 +409,15 @@ function VersionHistory({ docId }: { docId: string }) {
           />
         </label>
       </div>
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-xs text-[var(--danger)]">{error}</p>}
       {versions.length > 0 && (
-        <ul className="mt-2 space-y-1.5">
+        <ul className="mt-3 space-y-2">
           {versions.map((version) => (
             <li
               key={version.id}
-              className="flex items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-1.5 text-xs"
+              className="flex items-center justify-between rounded-[var(--radius-sm)] border border-[var(--edge)] bg-[var(--canvas-inset)] px-3 py-2 text-xs"
             >
-              <span className="truncate text-zinc-700">
+              <span className="truncate text-[var(--ink-muted)]">
                 v{version.version_number} · {version.filename} ·{" "}
                 {formatFileSize(version.file_size)}
                 {version.page_count != null &&
@@ -367,11 +432,15 @@ function VersionHistory({ docId }: { docId: string }) {
   );
 }
 
+/* ─── Dashboard Shell ─── */
+
 function DashboardShell() {
   const { user } = useAuth();
 
   const [documents, setDocuments] = useState<CampusDocument[]>([]);
-  const [listState, setListState] = useState<"loading" | "ready" | "error">("loading");
+  const [listState, setListState] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
   const [listError, setListError] = useState<string | null>(null);
   const [expandedVersions, setExpandedVersions] = useState<string | null>(null);
 
@@ -396,7 +465,9 @@ function DashboardShell() {
       setListState("ready");
       setListError(null);
     } catch (err) {
-      setListError(err instanceof Error ? err.message : "Unable to load documents.");
+      setListError(
+        err instanceof Error ? err.message : "Unable to load documents.",
+      );
       setListState("error");
     }
   }, []);
@@ -435,7 +506,11 @@ function DashboardShell() {
       setTitle("");
       await refreshDocuments();
     } catch (err) {
-      setUploadError(err instanceof ApiError ? err.message : "Upload failed. Is the file a valid PDF?");
+      setUploadError(
+        err instanceof ApiError
+          ? err.message
+          : "Upload failed. Is the file a valid PDF?",
+      );
     } finally {
       setUploading(false);
     }
@@ -472,7 +547,11 @@ function DashboardShell() {
       const detail = await getConversation(id);
       setMessages(detail.messages);
     } catch (err) {
-      setChatError(err instanceof ApiError ? err.message : "Unable to load conversation.");
+      setChatError(
+        err instanceof ApiError
+          ? err.message
+          : "Unable to load conversation.",
+      );
     }
   }
 
@@ -508,7 +587,10 @@ function DashboardShell() {
     };
     setMessages((current) => [...current, userMessage]);
     try {
-      const response = await askQuestion(question, conversationId ?? undefined);
+      const response = await askQuestion(
+        question,
+        conversationId ?? undefined,
+      );
       const assistantMessage: MessageDetail = {
         id: response.message_id,
         role: "ASSISTANT",
@@ -517,13 +599,20 @@ function DashboardShell() {
         citations: response.citations,
       };
       setMessages((current) => [...current, assistantMessage]);
-      if (conversationId === null || response.conversation_id !== conversationId) {
+      if (
+        conversationId === null ||
+        response.conversation_id !== conversationId
+      ) {
         setConversationId(response.conversation_id);
         await refreshConversations();
       }
     } catch (err) {
-      setChatError(err instanceof ApiError ? err.message : "Unable to get an answer.");
-      setMessages((current) => current.filter((m) => m.id !== userMessage.id));
+      setChatError(
+        err instanceof ApiError ? err.message : "Unable to get an answer.",
+      );
+      setMessages((current) =>
+        current.filter((m) => m.id !== userMessage.id),
+      );
       throw err;
     } finally {
       setAsking(false);
@@ -531,21 +620,22 @@ function DashboardShell() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
       <SiteHeader />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 animate-page-in">
         <div className="flex flex-col gap-6 lg:flex-row">
+          {/* ── Conversations sidebar ── */}
           <aside className="lg:w-64 lg:shrink-0">
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div className="rounded-[var(--radius-lg)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-4 shadow-[var(--shadow-sm)]">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-faint)]">
                   Conversations
                 </h2>
                 <button
                   type="button"
                   onClick={handleNewConversation}
-                  className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+                  className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--ink)] px-2.5 py-1 text-xs font-semibold text-[var(--canvas)] hover:bg-[var(--ink-muted)] transition-colors duration-150"
                 >
                   <Plus className="h-3.5 w-3.5" aria-hidden />
                   New
@@ -553,13 +643,17 @@ function DashboardShell() {
               </div>
               <div className="mt-3 space-y-1">
                 {convLoading && (
-                  <div className="flex items-center gap-2 py-2 text-xs text-zinc-500">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  <div className="flex items-center gap-2 py-2 text-xs text-[var(--ink-faint)]">
+                    <Loader2
+                      className="h-3.5 w-3.5 text-[var(--accent)]"
+                      style={{ animation: "spin 0.7s linear infinite" }}
+                      aria-hidden
+                    />
                     Loading…
                   </div>
                 )}
                 {!convLoading && conversations.length === 0 && (
-                  <p className="py-2 text-xs text-zinc-500">
+                  <p className="py-3 text-xs text-[var(--ink-faint)] text-center">
                     No conversations yet.
                   </p>
                 )}
@@ -567,16 +661,16 @@ function DashboardShell() {
                   <div
                     key={conversation.id}
                     className={cn(
-                      "group flex items-center gap-1 rounded-lg border px-2 py-1.5",
+                      "group flex items-center gap-1 rounded-[var(--radius-sm)] border px-2.5 py-2 transition-all duration-150",
                       conversation.id === conversationId
-                        ? "border-indigo-200 bg-indigo-50"
-                        : "border-transparent hover:border-zinc-200 hover:bg-zinc-50",
+                        ? "border-[var(--accent-muted)] bg-[var(--accent-faint)]"
+                        : "border-transparent hover:border-[var(--edge)] hover:bg-[var(--canvas-inset)]",
                     )}
                   >
                     <button
                       type="button"
                       onClick={() => selectConversation(conversation.id)}
-                      className="min-w-0 flex-1 truncate text-left text-sm text-zinc-700"
+                      className="min-w-0 flex-1 truncate text-left text-sm text-[var(--ink-muted)]"
                       title={conversation.title}
                     >
                       {conversation.title}
@@ -584,9 +678,12 @@ function DashboardShell() {
                     <button
                       type="button"
                       onClick={() =>
-                        handleDeleteConversation(conversation.id, conversation.title)
+                        handleDeleteConversation(
+                          conversation.id,
+                          conversation.title,
+                        )
                       }
-                      className="text-zinc-300 opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100"
+                      className="text-[var(--ink-ghost)] opacity-0 transition-all duration-150 hover:text-[var(--danger)] group-hover:opacity-100"
                       aria-label={`Delete ${conversation.title}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />
@@ -597,12 +694,17 @@ function DashboardShell() {
             </div>
           </aside>
 
+          {/* ── Main content ── */}
           <div className="min-w-0 flex-1 space-y-8">
+            {/* Welcome */}
             <section>
-              <h1 className="text-3xl font-semibold tracking-tight">
+              <h1
+                className="text-3xl tracking-tight text-[var(--ink)]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
                 Welcome, {user?.name}
               </h1>
-              <p className="mt-1 text-zinc-600">
+              <p className="mt-1 text-[var(--ink-faint)]">
                 {user?.role === "ADMIN"
                   ? "Administrator account"
                   : user?.role === "FACULTY"
@@ -611,6 +713,7 @@ function DashboardShell() {
               </p>
             </section>
 
+            {/* Chat */}
             <ChatPanel
               conversationId={conversationId}
               messages={messages}
@@ -620,20 +723,26 @@ function DashboardShell() {
               chatError={chatError}
             />
 
-            <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-2">
-                <Upload className="h-4 w-4 text-zinc-500" aria-hidden />
-                <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+            {/* Upload */}
+            <section className="rounded-[var(--radius-lg)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-6 shadow-[var(--shadow-sm)]">
+              <div className="flex items-center gap-2.5">
+                <Upload className="h-4 w-4 text-[var(--accent)]" aria-hidden />
+                <h2
+                  className="text-lg text-[var(--ink)]"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
                   Upload a PDF
                 </h2>
               </div>
-              <form onSubmit={handleUpload} className="mt-4 space-y-4">
-                {uploadError && <Alert variant="error">{uploadError}</Alert>}
+              <form onSubmit={handleUpload} className="mt-5 space-y-4">
+                {uploadError && (
+                  <Alert variant="error">{uploadError}</Alert>
+                )}
                 <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
                   <div className="flex items-center gap-3">
-                    <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-zinc-300 px-4 py-3 text-sm text-zinc-600 transition-colors hover:border-indigo-400 hover:bg-indigo-50/40">
+                    <label className="flex-1 cursor-pointer rounded-[var(--radius-md)] border-2 border-dashed border-[var(--edge-strong)] px-5 py-4 text-sm text-[var(--ink-faint)] transition-colors duration-150 hover:border-[var(--accent)] hover:bg-[var(--accent-faint)]">
                       {file ? (
-                        <span className="font-medium text-zinc-800">
+                        <span className="font-medium text-[var(--ink)]">
                           {file.name} ({formatFileSize(file.size)})
                         </span>
                       ) : (
@@ -643,7 +752,9 @@ function DashboardShell() {
                         type="file"
                         accept=".pdf,application/pdf"
                         className="sr-only"
-                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                        onChange={(e) =>
+                          setFile(e.target.files?.[0] ?? null)
+                        }
                       />
                     </label>
                     <Input
@@ -653,22 +764,36 @@ function DashboardShell() {
                       onChange={(e) => setTitle(e.target.value)}
                     />
                   </div>
-                  <Button type="submit" disabled={!file || uploading} className="self-end">
-                    {uploading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+                  <Button
+                    type="submit"
+                    disabled={!file || uploading}
+                    className="self-end"
+                  >
+                    {uploading && (
+                      <Loader2
+                        className="h-4 w-4"
+                        style={{ animation: "spin 0.7s linear infinite" }}
+                        aria-hidden
+                      />
+                    )}
                     Upload
                   </Button>
                 </div>
               </form>
             </section>
 
+            {/* Documents */}
             <section>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-zinc-500" aria-hidden />
-                  <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+                <div className="flex items-center gap-2.5">
+                  <FileText className="h-4 w-4 text-[var(--accent)]" aria-hidden />
+                  <h2
+                    className="text-lg text-[var(--ink)]"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
                     Documents
                   </h2>
-                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                  <span className="rounded-full bg-[var(--canvas-inset)] px-2 py-0.5 text-xs font-semibold text-[var(--ink-faint)]">
                     {documents.length}
                   </span>
                 </div>
@@ -679,50 +804,67 @@ function DashboardShell() {
               </div>
 
               {listState === "loading" && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                <div className="mt-5 flex items-center gap-2 text-sm text-[var(--ink-faint)]">
+                  <Loader2
+                    className="h-4 w-4 text-[var(--accent)]"
+                    style={{ animation: "spin 0.7s linear infinite" }}
+                    aria-hidden
+                  />
                   Loading documents…
                 </div>
               )}
 
               {listState === "error" && (
-                <Alert className="mt-4" variant="error">
+                <Alert className="mt-5" variant="error">
                   {listError}
                 </Alert>
               )}
 
               {listState === "ready" && documents.length === 0 && (
-                <div className="mt-4 rounded-xl border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500">
-                  No documents yet. Upload a PDF above to get started.
+                <div className="mt-5 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--edge-strong)] bg-[var(--canvas-raised)] p-10 text-center">
+                  <p
+                    className="text-lg text-[var(--ink-faint)]"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
+                    No documents yet.
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--ink-ghost)]">
+                    Upload a PDF above to get started.
+                  </p>
                 </div>
               )}
 
               {listState === "ready" && documents.length > 0 && (
-                <ul className="mt-4 space-y-3">
+                <ul className="mt-5 space-y-3">
                   {documents.map((doc) => {
                     const busy = processingId === doc.id;
                     const canProcess =
-                      (doc.status === "UPLOADED" || doc.status === "FAILED") && !busy;
+                      (doc.status === "UPLOADED" ||
+                        doc.status === "FAILED") &&
+                      !busy;
                     return (
                       <li
                         key={doc.id}
-                        className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+                        className="rounded-[var(--radius-lg)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-5 shadow-[var(--shadow-sm)] border-l-[3px] border-l-[var(--accent-muted)]"
                       >
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="font-medium text-zinc-900">{doc.title}</h3>
+                              <h3 className="font-semibold text-[var(--ink)]">
+                                {doc.title}
+                              </h3>
                               <StatusBadge status={doc.status} />
                             </div>
-                            <p className="mt-1 truncate text-sm text-zinc-500">
-                              {doc.original_filename} · {formatFileSize(doc.file_size)}
+                            <p className="mt-1 truncate text-sm text-[var(--ink-faint)]">
+                              {doc.original_filename} ·{" "}
+                              {formatFileSize(doc.file_size)}
                               {doc.page_count != null &&
                                 ` · ${doc.page_count} page${doc.page_count === 1 ? "" : "s"}`}
                               {doc.chunk_count != null &&
                                 doc.chunk_count > 0 &&
                                 ` · ${doc.chunk_count} chunks`}
                             </p>
-                            <p className="mt-0.5 text-xs text-zinc-400">
+                            <p className="mt-0.5 text-xs text-[var(--ink-ghost)]">
                               Uploaded {formatDate(doc.created_at)}
                               {doc.processed_at &&
                                 ` · Processed ${formatDate(doc.processed_at)}`}
@@ -730,8 +872,14 @@ function DashboardShell() {
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
                             {busy ? (
-                              <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                              <span className="inline-flex items-center gap-1.5 text-xs text-[var(--accent)]">
+                                <Loader2
+                                  className="h-3.5 w-3.5"
+                                  style={{
+                                    animation: "spin 0.7s linear infinite",
+                                  }}
+                                  aria-hidden
+                                />
                                 Processing…
                               </span>
                             ) : (
@@ -741,24 +889,33 @@ function DashboardShell() {
                                   variant="outline"
                                   onClick={() =>
                                     setExpandedVersions(
-                                      expandedVersions === doc.id ? null : doc.id,
+                                      expandedVersions === doc.id
+                                        ? null
+                                        : doc.id,
                                     )
                                   }
                                 >
-                                  <Search className="h-3.5 w-3.5" aria-hidden />
                                   Versions
                                 </Button>
                                 {canProcess && (
-                                  <Button size="sm" onClick={() => handleProcess(doc.id)}>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleProcess(doc.id)}
+                                  >
                                     Process
                                   </Button>
                                 )}
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => handleDelete(doc.id, doc.title)}
+                                  onClick={() =>
+                                    handleDelete(doc.id, doc.title)
+                                  }
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                                  <Trash2
+                                    className="h-3.5 w-3.5"
+                                    aria-hidden
+                                  />
                                   Delete
                                 </Button>
                               </>
@@ -766,10 +923,14 @@ function DashboardShell() {
                           </div>
                         </div>
                         {doc.status === "FAILED" && (
-                          <p className="mt-3 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
-                            <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-                            Processing failed. You can process again after uploading a valid PDF.
-                          </p>
+                          <div className="mt-3 flex items-start gap-2 rounded-[var(--radius-sm)] border-l-[3px] border-l-[var(--danger)] bg-[var(--danger-faint)] p-3 text-xs text-[var(--danger)]">
+                            <TriangleAlert
+                              className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                              aria-hidden
+                            />
+                            Processing failed. You can process again after
+                            uploading a valid PDF.
+                          </div>
                         )}
                         {expandedVersions === doc.id && (
                           <VersionHistory docId={doc.id} />

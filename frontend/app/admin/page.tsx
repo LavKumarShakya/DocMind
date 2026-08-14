@@ -31,18 +31,23 @@ import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/documents";
 import { cn } from "@/lib/utils";
 
-const roleStyles: Record<Role, string> = {
-  STUDENT: "bg-blue-50 text-blue-700 border-blue-200",
-  FACULTY: "bg-amber-50 text-amber-700 border-amber-200",
-  ADMIN: "bg-indigo-50 text-indigo-700 border-indigo-200",
+/* ─── Role Badge ─── */
+
+const roleColors: Record<Role, string> = {
+  STUDENT:
+    "border-[var(--info)] bg-[var(--info-faint)] text-[var(--info)]",
+  FACULTY:
+    "border-[var(--accent)] bg-[var(--accent-faint)] text-[var(--accent-hover)]",
+  ADMIN:
+    "border-[var(--ink)] bg-[var(--canvas-inset)] text-[var(--ink)]",
 };
 
 function RoleBadge({ role }: { role: Role }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
-        roleStyles[role],
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+        roleColors[role],
       )}
     >
       {role.charAt(0) + role.slice(1).toLowerCase()}
@@ -50,27 +55,57 @@ function RoleBadge({ role }: { role: Role }) {
   );
 }
 
+/* ─── Stat Card ─── */
+
 function StatCard({
   icon,
   label,
   value,
+  variant = "default",
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
+  variant?: "default" | "danger";
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-2 text-zinc-500">
+    <div
+      className={cn(
+        "rounded-[var(--radius-lg)] border p-5 shadow-[var(--shadow-sm)]",
+        variant === "danger"
+          ? "border-[var(--danger)] bg-[var(--danger-faint)]"
+          : "border-[var(--edge)] bg-[var(--canvas-raised)]",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-2",
+          variant === "danger"
+            ? "text-[var(--danger)]"
+            : "text-[var(--ink-faint)]",
+        )}
+      >
         {icon}
-        <span className="text-xs font-medium uppercase tracking-wide">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.1em]">
           {label}
         </span>
       </div>
-      <p className="mt-2 text-3xl font-semibold text-zinc-900">{value}</p>
+      <p
+        className={cn(
+          "mt-2 text-3xl",
+          variant === "danger"
+            ? "text-[var(--danger)] font-bold"
+            : "text-[var(--ink)]",
+        )}
+        style={{ fontFamily: "var(--font-display)" }}
+      >
+        {value}
+      </p>
     </div>
   );
 }
+
+/* ─── Admin Shell ─── */
 
 function AdminShell() {
   const { user } = useAuth();
@@ -135,14 +170,20 @@ function AdminShell() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl space-y-8 px-6 py-10">
+      <main className="mx-auto max-w-6xl space-y-8 px-5 py-10 sm:px-8 animate-page-in">
+        {/* Header */}
         <section className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Admin</h1>
-            <p className="mt-1 text-zinc-600">
+            <h1
+              className="text-3xl tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Admin
+            </h1>
+            <p className="mt-1.5 text-[var(--ink-faint)]">
               Manage users, roles and review document activity.
             </p>
           </div>
@@ -155,13 +196,19 @@ function AdminShell() {
         {roleError && <Alert variant="error">{roleError}</Alert>}
         {error && <Alert variant="error">{error}</Alert>}
 
+        {/* Loading */}
         {loading && (
-          <div className="flex items-center gap-2 text-sm text-zinc-500">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          <div className="flex items-center gap-2.5 text-sm text-[var(--ink-faint)]">
+            <Loader2
+              className="h-4 w-4 text-[var(--accent)]"
+              style={{ animation: "spin 0.7s linear infinite" }}
+              aria-hidden
+            />
             Loading admin data…
           </div>
         )}
 
+        {/* Stats */}
         {!loading && stats && (
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
@@ -189,29 +236,29 @@ function AdminShell() {
               label="Feedback entries"
               value={stats.feedback_entries}
             />
-            <div className="rounded-xl border border-red-200 bg-red-50 p-5">
-              <div className="flex items-center gap-2 text-red-600">
-                <FileText className="h-4 w-4" aria-hidden />
-                <span className="text-xs font-medium uppercase tracking-wide">
-                  Failed documents
-                </span>
-              </div>
-              <p className="mt-2 text-3xl font-semibold text-red-700">
-                {stats.failed_documents}
-              </p>
-            </div>
+            <StatCard
+              icon={<FileText className="h-4 w-4" aria-hidden />}
+              label="Failed documents"
+              value={stats.failed_documents}
+              variant="danger"
+            />
           </section>
         )}
 
+        {/* Users & Documents */}
         {!loading && (
           <>
+            {/* Users */}
             <section>
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-zinc-500" aria-hidden />
-                <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+              <div className="flex items-center gap-2.5">
+                <Users className="h-4 w-4 text-[var(--accent)]" aria-hidden />
+                <h2
+                  className="text-lg text-[var(--ink)]"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
                   Users
                 </h2>
-                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                <span className="rounded-full bg-[var(--canvas-inset)] px-2 py-0.5 text-xs font-semibold text-[var(--ink-faint)]">
                   {users.length}
                 </span>
               </div>
@@ -219,18 +266,20 @@ function AdminShell() {
                 {users.map((adminUser) => (
                   <li
                     key={adminUser.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-4 shadow-[var(--shadow-sm)]"
                   >
                     <div className="min-w-0">
-                      <p className="font-medium text-zinc-900">
+                      <p className="font-semibold text-[var(--ink)]">
                         {adminUser.name}
                         {adminUser.id === user?.id && (
-                          <span className="ml-2 text-xs font-normal text-zinc-400">
+                          <span className="ml-2 text-xs font-normal text-[var(--ink-ghost)]">
                             (you)
                           </span>
                         )}
                       </p>
-                      <p className="text-sm text-zinc-500">{adminUser.email}</p>
+                      <p className="text-sm text-[var(--ink-faint)]">
+                        {adminUser.email}
+                      </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <RoleBadge role={adminUser.role} />
@@ -238,9 +287,12 @@ function AdminShell() {
                         value={adminUser.role}
                         disabled={changingRole === adminUser.id}
                         onChange={(e) =>
-                          handleRoleChange(adminUser.id, e.target.value as Role)
+                          handleRoleChange(
+                            adminUser.id,
+                            e.target.value as Role,
+                          )
                         }
-                        className="h-8 rounded-lg border border-zinc-300 bg-white px-2 text-xs text-zinc-700 focus:border-indigo-500 focus:outline-none"
+                        className="h-8 rounded-[var(--radius-sm)] border border-[var(--edge-strong)] bg-[var(--canvas-raised)] px-2 text-xs text-[var(--ink-muted)] transition-colors duration-150 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
                         aria-label={`Change role for ${adminUser.name}`}
                       >
                         <option value="STUDENT">Student</option>
@@ -248,7 +300,11 @@ function AdminShell() {
                         <option value="ADMIN">Admin</option>
                       </select>
                       {changingRole === adminUser.id && (
-                        <Loader2 className="h-4 w-4 animate-spin text-zinc-400" aria-hidden />
+                        <Loader2
+                          className="h-4 w-4 text-[var(--accent)]"
+                          style={{ animation: "spin 0.7s linear infinite" }}
+                          aria-hidden
+                        />
                       )}
                     </div>
                   </li>
@@ -256,13 +312,20 @@ function AdminShell() {
               </ul>
             </section>
 
+            {/* Documents */}
             <section>
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-zinc-500" aria-hidden />
-                <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+              <div className="flex items-center gap-2.5">
+                <FileText
+                  className="h-4 w-4 text-[var(--accent)]"
+                  aria-hidden
+                />
+                <h2
+                  className="text-lg text-[var(--ink)]"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
                   Documents
                 </h2>
-                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
+                <span className="rounded-full bg-[var(--canvas-inset)] px-2 py-0.5 text-xs font-semibold text-[var(--ink-faint)]">
                   {documents.length}
                 </span>
               </div>
@@ -270,11 +333,13 @@ function AdminShell() {
                 {documents.map((doc) => (
                   <li
                     key={doc.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-4 shadow-[var(--shadow-sm)] border-l-[3px] border-l-[var(--accent-muted)]"
                   >
                     <div className="min-w-0">
-                      <p className="font-medium text-zinc-900">{doc.title}</p>
-                      <p className="text-sm text-zinc-500">
+                      <p className="font-semibold text-[var(--ink)]">
+                        {doc.title}
+                      </p>
+                      <p className="text-sm text-[var(--ink-faint)]">
                         Uploaded by {doc.owner_name ?? "Unknown"} ·{" "}
                         {formatDate(doc.created_at)}
                         {doc.page_count != null &&
@@ -282,7 +347,7 @@ function AdminShell() {
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2 text-xs">
-                      <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-zinc-600">
+                      <span className="rounded-full border border-[var(--edge)] bg-[var(--canvas-inset)] px-2.5 py-0.5 font-medium text-[var(--ink-faint)]">
                         {doc.access_level === "PUBLIC"
                           ? "Public"
                           : doc.access_level === "STUDENT"
@@ -293,19 +358,22 @@ function AdminShell() {
                       </span>
                       <span
                         className={cn(
-                          "rounded-full border px-2 py-0.5 font-medium",
+                          "rounded-full border px-2.5 py-0.5 font-semibold",
                           doc.status === "ACTIVE"
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            ? "border-[var(--success)] bg-[var(--success-faint)] text-[var(--success)]"
                             : doc.status === "FAILED"
-                              ? "border-red-200 bg-red-50 text-red-700"
-                              : "border-zinc-200 bg-zinc-50 text-zinc-600",
+                              ? "border-[var(--danger)] bg-[var(--danger-faint)] text-[var(--danger)]"
+                              : "border-[var(--edge-strong)] bg-[var(--canvas-inset)] text-[var(--ink-faint)]",
                         )}
                       >
                         {doc.status === "ACTIVE"
                           ? "Active"
-                          : doc.status.charAt(0) + doc.status.slice(1).toLowerCase()}
+                          : doc.status.charAt(0) +
+                            doc.status.slice(1).toLowerCase()}
                       </span>
-                      <span className="text-zinc-400">v{doc.version}</span>
+                      <span className="text-[var(--ink-ghost)]">
+                        v{doc.version}
+                      </span>
                     </div>
                   </li>
                 ))}

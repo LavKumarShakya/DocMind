@@ -4,8 +4,9 @@ import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DocMind",
-  description: "University knowledge retrieval and question-answering platform.",
+  title: "DocMind — University Knowledge Platform",
+  description:
+    "Ask natural-language questions about university documents. Grounded answers powered by retrieval-augmented generation.",
 };
 
 export default function RootLayout({

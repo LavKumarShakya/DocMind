@@ -37,3 +37,5 @@ backend/evaluation/storage/
 Thumbs.db
 .idea/
 .vscode/
+
+.agent

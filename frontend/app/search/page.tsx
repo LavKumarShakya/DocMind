@@ -37,22 +37,29 @@ function SearchPageShell() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
       <SiteHeader />
 
-      <main className="mx-auto max-w-5xl space-y-6 px-6 py-10">
+      <main className="mx-auto max-w-5xl space-y-8 px-5 py-10 sm:px-8 animate-page-in">
+        {/* Header */}
         <section>
-          <h1 className="text-3xl font-semibold tracking-tight">Search documents</h1>
-          <p className="mt-1 text-zinc-600">
+          <h1
+            className="text-3xl tracking-tight"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Search documents
+          </h1>
+          <p className="mt-1.5 text-[var(--ink-faint)] max-w-lg">
             Find passages across the documents you can view. Search is grounded,
             permission-aware and never calls an LLM.
           </p>
         </section>
 
+        {/* Search bar */}
         <form onSubmit={handleSearch} className="flex items-center gap-3">
           <div className="relative flex-1">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-ghost)]"
               aria-hidden
             />
             <Input
@@ -64,9 +71,17 @@ function SearchPageShell() {
               maxLength={2000}
             />
           </div>
-          <Button type="submit" disabled={!query.trim() || searching}>
+          <Button
+            type="submit"
+            variant="accent"
+            disabled={!query.trim() || searching}
+          >
             {searching ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              <Loader2
+                className="h-4 w-4"
+                style={{ animation: "spin 0.7s linear infinite" }}
+                aria-hidden
+              />
             ) : (
               <Search className="h-4 w-4" aria-hidden />
             )}
@@ -74,44 +89,55 @@ function SearchPageShell() {
           </Button>
         </form>
 
+        {/* Error */}
         {error && <Alert variant="error">{error}</Alert>}
 
+        {/* Empty state */}
         {results !== null && results.length === 0 && (
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-white p-10 text-center">
-            <SearchX className="h-6 w-6 text-zinc-400" aria-hidden />
-            <p className="text-sm text-zinc-600">No results found.</p>
-            <p className="text-xs text-zinc-400">
+          <div className="flex flex-col items-center gap-3 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--edge-strong)] bg-[var(--canvas-raised)] p-12 text-center">
+            <SearchX className="h-8 w-8 text-[var(--ink-ghost)]" aria-hidden />
+            <p
+              className="text-lg text-[var(--ink-faint)]"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              No results found.
+            </p>
+            <p className="text-sm text-[var(--ink-ghost)]">
               Try different keywords or check the documents you can view.
             </p>
           </div>
         )}
 
+        {/* Results */}
         {results && results.length > 0 && (
           <section>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-[var(--ink-faint)]">
               {results.length} result{results.length === 1 ? "" : "s"} for{" "}
-              <span className="font-medium text-zinc-700">"{query}"</span>
+              <span className="font-semibold text-[var(--ink)]">
+                &ldquo;{query}&rdquo;
+              </span>
             </p>
-            <ul className="mt-3 space-y-3">
+            <ul className="mt-4 space-y-3">
               {results.map((result, i) => (
                 <li
                   key={`${result.document_title}-${result.page_number}-${i}`}
-                  className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+                  className="rounded-[var(--radius-lg)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-5 shadow-[var(--shadow-sm)] border-l-[3px] border-l-[var(--accent-muted)]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="font-medium text-zinc-900">
+                      <h3 className="font-semibold text-[var(--ink)]">
                         {result.document_title}
                       </h3>
-                      <p className="mt-0.5 text-xs text-zinc-400">
-                        {result.section ?? `Page ${result.page_number ?? "—"}`}
+                      <p className="mt-0.5 text-xs text-[var(--ink-ghost)]">
+                        {result.section ??
+                          `Page ${result.page_number ?? "—"}`}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                    <span className="shrink-0 rounded-full bg-[var(--accent-faint)] border border-[var(--accent-muted)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-hover)]">
                       {Math.round(result.relevance_score * 100)}% match
                     </span>
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-700">
+                  <p className="mt-3 text-sm leading-relaxed text-[var(--ink-muted)]">
                     {result.snippet}
                   </p>
                 </li>
