@@ -59,6 +59,10 @@ class GeminiProvider(LLMProvider):
 
     name = "gemini"
 
+    # Client-side request timeout (milliseconds). Prevents a hung upstream call
+    # from holding a Render request open indefinitely.
+    REQUEST_TIMEOUT_MS = 30_000
+
     def __init__(self, *, api_key: str | None = None, model: str | None = None) -> None:
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model = model or settings.LLM_MODEL
@@ -75,7 +79,10 @@ class GeminiProvider(LLMProvider):
         except ImportError as exc:  # pragma: no cover - dependency always installed
             raise LLMProviderError("google-genai is not installed.") from exc
 
-        client = genai.Client(api_key=self.api_key)
+        client = genai.Client(
+            api_key=self.api_key,
+            http_options=genai_types.HttpOptions(timeout=self.REQUEST_TIMEOUT_MS),
+        )
         response = client.models.generate_content(
             model=self.model,
             contents=question,

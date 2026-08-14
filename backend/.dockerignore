@@ -10,3 +10,7 @@ storage/
 .venv/
 venv/
 *.log
+# Development-only content must never ship in the image.
+evaluation/
+tests/
+requirements-dev.txt

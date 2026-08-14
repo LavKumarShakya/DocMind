@@ -1045,6 +1045,59 @@ Then verify `GET http://<host>/api/health` → `{"status":"ok", ...}`.
 [Future improvements](#future-improvements) — background ingestion, read
 replicas and managed storage would be the first steps for a larger deployment.
 
+### Render (backend + database) + Vercel (frontend)
+
+The frontend is a fully static Next.js build (all routes prerender), so it
+deploys on Vercel with no Dockerfile, and the backend deploys on Render as a
+Docker Web Service against Render's managed PostgreSQL (which ships the
+`pgvector` extension).
+
+**Render — managed PostgreSQL**
+
+- Region close to the web service; note the **Internal Database URL**.
+- Render's URL is `postgresql://…`; the app expects the psycopg driver
+  explicitly, so set `DATABASE_URL` to the internal URL with the scheme
+  rewritten to `postgresql+psycopg://`.
+
+**Render — Web Service (Docker)**
+
+- The Dockerfile installs CPU-only torch and runs migrations itself, so **no
+  Start Command override is needed** — it already executes
+  `alembic upgrade head && uvicorn app.main:app --port $PORT` (defaults to
+  8000 for compose/local, `$PORT` on Render).
+- Environment variables:
+
+  | Variable | Value |
+  |----------|-------|
+  | `DATABASE_URL` | Internal URL, scheme rewritten to `postgresql+psycopg://` |
+  | `SECRET_KEY` | Strong random string (32+ bytes) |
+  | `CORS_ORIGINS` | `https://<your-app>.vercel.app` |
+  | `GEMINI_API_KEY` | Real key (only needed with `LLM_PROVIDER=gemini`) |
+  | `APP_ENV` | `production` |
+  | `DEBUG` | `false` |
+  | `EMBEDDING_MODEL` | `BAAI/bge-base-en-v1.5` |
+  | `RERANKER_MODEL` | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
+  | `STORAGE_DIR` | `/data/storage` |
+  | `HF_HOME` | `/data/huggingface` |
+
+- **Persistent Disk** (required): mount a disk at `/data`. Without it the BGE
+  embedding model (~400 MB) and cross-encoder re-download on every deploy and
+  uploaded PDFs are lost on restart.
+- **Health check path**: `/api/health` (unauthenticated; returns 503 when the
+  database is unreachable).
+- **Instance size**: at least 1 GB RAM (free tier 0.5 GB may OOM when both the
+  BGE embedder and the reranker load). CPU-only inference, 1 worker — correct,
+  because the models are in-process singletons.
+
+**Vercel — frontend**
+
+- Import the repo (framework auto-detected as Next.js). No build config needed.
+- Environment variable: `NEXT_PUBLIC_API_URL=https://<your-backend>.onrender.com`
+  (build-time; required — the default is localhost).
+- Preview deployments call the same backend, so their preview URL must be added
+  to the backend's `CORS_ORIGINS` (or the backend must allow the preview
+  origin) before the frontend can reach the API from a preview.
+
 ---
 
 ## Demo checklist
