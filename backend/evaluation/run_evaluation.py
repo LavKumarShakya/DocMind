@@ -54,7 +54,7 @@ from app.services.retrieval_types import RetrievalCandidate
 from evaluation.analyze import classify_failure
 from evaluation.answers import answer_is_correct, faithfulness_score, is_fallback
 from evaluation.citations import analyze_citations
-from evaluation.confidence import classify as gate_classify, confusion_matrix
+from evaluation.confidence import confusion_matrix
 from evaluation.dataset import DATASET_PATH, chunk_is_relevant, load_dataset
 from evaluation.metrics import (
     aggregate_mrr,
@@ -232,6 +232,29 @@ def _count_chunks(session, document_id) -> int:
     )
 
 
+def _corpus_chunk_texts(Session) -> list[str]:
+    """Return every ACTIVE corpus chunk's text from the evaluation database.
+
+    Used to verify (independently of retrieval) whether a question's ground-truth
+    supporting evidence actually exists in the indexed evaluation corpus.
+    """
+    from app.core.enums import DocumentStatus
+    from app.db.models import Document, DocumentChunk
+    from sqlalchemy import select
+
+    session = Session()
+    try:
+        return list(
+            session.execute(
+                select(DocumentChunk.content)
+                .join(Document, Document.id == DocumentChunk.document_id)
+                .where(Document.status == DocumentStatus.ACTIVE)
+            ).scalars()
+        )
+    finally:
+        session.close()
+
+
 def _select_questions(dataset, limit: int | None, category: str | None):
     questions = list(dataset.questions)
     if category:
@@ -376,6 +399,7 @@ def _run_mode(args) -> dict:
 
         user = _ensure_eval_user(Session)
         corpus_state = _ingest_corpus(Session, user, dataset)
+        corpus_chunk_texts = _corpus_chunk_texts(Session)
 
         mode_retriever = (
             BaselineRetriever() if args.mode == "baseline" else Phase5Retriever()
@@ -418,6 +442,10 @@ def _run_mode(args) -> dict:
                 "expected_answer": question.expected_answer,
                 "expected_answer_terms": question.expected_answer_terms,
                 "relevant_documents": question.relevant_documents,
+                "evidence_in_corpus": bool(question.supporting_text) and any(
+                    chunk_is_relevant(text, question.supporting_text)
+                    for text in corpus_chunk_texts
+                ),
                 "retrieval_metrics": retrieval_metrics,
                 "stage_times": {k: round(v * 1000.0, 3) for k, v in stage_times.items()},
                 "e2e_time_ms": round(e2e * 1000.0, 1),
@@ -501,23 +529,33 @@ def _run_mode(args) -> dict:
         engine.dispose()
 
 
-def _question_from_row(row: dict):
-    from evaluation.dataset import Question
+def _latency_summary(questions: list[dict]) -> dict:
+    """Per-stage + end-to-end latency statistics (mean/median/p95, in ms)."""
+    import statistics
 
-    return Question(
-        {
-            "id": row["id"],
-            "question": row["question"],
-            "expected_answer": row.get("expected_answer"),
-            "expected_answer_terms": row.get("expected_answer_terms", []),
-            "relevant_documents": row.get("relevant_documents", []),
-            "relevant_pages": [],
-            "supporting_text": None,
-            "category": row.get("category", "other"),
-            "difficulty": row.get("difficulty", "medium"),
-            "answerable": row.get("answerable", False),
+    def _summarize(values) -> dict:
+        vals = [v for v in values if v is not None]
+        if not vals:
+            return {"count": 0, "mean_ms": None, "median_ms": None, "p95_ms": None}
+        ordered = sorted(vals)
+        p95 = ordered[min(len(ordered) - 1, int(round(0.95 * len(ordered))) - 1)]
+        return {
+            "count": len(vals),
+            "mean_ms": round(sum(vals) / len(vals), 1),
+            "median_ms": round(statistics.median(ordered), 1),
+            "p95_ms": round(p95, 1),
         }
-    )
+
+    summary: dict = {}
+    for stage in ("dense", "bm25", "fuse", "rerank"):
+        values = [q.get("stage_times", {}).get(stage) for q in questions]
+        if any(v is not None for v in values):
+            summary[stage] = _summarize(values)
+    summary["e2e"] = _summarize([q.get("e2e_time_ms") for q in questions])
+    llm_values = [q.get("llm_time_ms") for q in questions if q.get("llm_time_ms") is not None]
+    if llm_values:
+        summary["llm"] = _summarize(llm_values)
+    return summary
 
 
 def _aggregate(results: dict) -> dict:
@@ -540,6 +578,8 @@ def _aggregate(results: dict) -> dict:
         "doc_recall@5": _retrieval_metric("doc_recall@5"),
         "doc_recall@10": _retrieval_metric("doc_recall@10"),
     }
+
+    aggregates["latency"] = _latency_summary(questions)
 
     if not results["meta"].get("skip_generation"):
         evaluated = [q for q in questions if "correct" in q]
@@ -578,15 +618,15 @@ def _aggregate(results: dict) -> dict:
         if results["meta"].get("mode") == "phase5":
             gate_rows = [
                 {
-                    "bucket": gate_classify(
-                        _question_from_row(q), q["confident"]
-                    ),
+                    "answerable": q["answerable"],
+                    "confident": q["confident"],
                     "correct": q["correct"],
+                    "evidence_in_corpus": q.get("evidence_in_corpus", False),
                 }
                 for q in evaluated
             ]
             aggregates["confidence"] = confusion_matrix(gate_rows)
-            aggregates["rejection_rate_answerable"] = aggregates["confidence"]["rejection_rate_answerable"]
+            aggregates["abstention_rate"] = aggregates["confidence"]["abstention_rate"]
 
     # Category breakdown (retrieval recall@5 + accuracy when available).
     categories: dict = {}

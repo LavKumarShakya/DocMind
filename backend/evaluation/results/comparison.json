@@ -10,6 +10,26 @@
     "doc_recall@1": 0.5814,
     "doc_recall@5": 0.5814,
     "doc_recall@10": 0.5814,
+    "latency": {
+      "dense": {
+        "count": 56,
+        "mean_ms": 73.4,
+        "median_ms": 71.4,
+        "p95_ms": 83.7
+      },
+      "e2e": {
+        "count": 56,
+        "mean_ms": 73.5,
+        "median_ms": 71.6,
+        "p95_ms": 83.8
+      },
+      "llm": {
+        "count": 29,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0
+      }
+    },
     "answered": 56,
     "answer_accuracy": 0.3929,
     "fallback_rate": 0.4821,
@@ -79,6 +99,44 @@
     "doc_recall@1": 0.8837,
     "doc_recall@5": 0.8837,
     "doc_recall@10": 0.8837,
+    "latency": {
+      "dense": {
+        "count": 56,
+        "mean_ms": 70.3,
+        "median_ms": 70.4,
+        "p95_ms": 73.4
+      },
+      "bm25": {
+        "count": 56,
+        "mean_ms": 2.3,
+        "median_ms": 2.2,
+        "p95_ms": 3.1
+      },
+      "fuse": {
+        "count": 56,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0
+      },
+      "rerank": {
+        "count": 47,
+        "mean_ms": 56.4,
+        "median_ms": 49.1,
+        "p95_ms": 140.2
+      },
+      "e2e": {
+        "count": 56,
+        "mean_ms": 120.1,
+        "median_ms": 101.4,
+        "p95_ms": 207.1
+      },
+      "llm": {
+        "count": 44,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0
+      }
+    },
     "answered": 56,
     "answer_accuracy": 0.4286,
     "fallback_rate": 0.2143,
@@ -94,21 +152,29 @@
     "citation_questions_with_tags": 0,
     "confidence": {
       "answerable": {
+        "total": 43,
         "accepted": 38,
         "rejected": 5,
         "accepted_correct": 17,
         "accepted_accuracy": 0.4474
       },
       "unanswerable": {
+        "total": 13,
         "accepted": 6,
         "rejected": 7,
         "rejected_correct": 7,
-        "rejection_rate": 1.0
+        "accepted_correct": 0
       },
-      "rejection_rate_answerable": 0.1163,
-      "false_acceptance": 0.0
+      "false_acceptance_count": 6,
+      "false_acceptance_rate": 0.4615,
+      "correct_rejection_count": 7,
+      "correct_rejection_rate": 0.5385,
+      "false_rejection_count": 5,
+      "false_rejection_rate": 0.1163,
+      "answerable_with_evidence": 43,
+      "abstention_rate": 0.2143
     },
-    "rejection_rate_answerable": 0.1163,
+    "abstention_rate": 0.2143,
     "category_breakdown": {
       "edge": {
         "count": 5,
@@ -166,23 +232,63 @@
   },
   "latency": {
     "baseline": {
-      "dense": 73.6,
-      "bm25": 0.0,
-      "fuse": 0.0,
-      "rerank": 0.0,
-      "e2e_mean_ms": 73.7,
-      "llm_mean_ms": 0.0,
-      "mode": "baseline"
+      "dense": {
+        "count": 56,
+        "mean_ms": 73.4,
+        "median_ms": 71.4,
+        "p95_ms": 83.7
+      },
+      "e2e": {
+        "count": 56,
+        "mean_ms": 73.5,
+        "median_ms": 71.6,
+        "p95_ms": 83.8
+      },
+      "llm": {
+        "count": 29,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0
+      }
     },
     "phase5": {
-      "dense": 72.2,
-      "bm25": 2.3,
-      "fuse": 0.0,
-      "rerank": 47.6,
-      "e2e_mean_ms": 122.4,
-      "llm_mean_ms": 0.0,
-      "mode": "phase5"
+      "dense": {
+        "count": 56,
+        "mean_ms": 70.3,
+        "median_ms": 70.4,
+        "p95_ms": 73.4
+      },
+      "bm25": {
+        "count": 56,
+        "mean_ms": 2.3,
+        "median_ms": 2.2,
+        "p95_ms": 3.1
+      },
+      "fuse": {
+        "count": 56,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0
+      },
+      "rerank": {
+        "count": 47,
+        "mean_ms": 56.4,
+        "median_ms": 49.1,
+        "p95_ms": 140.2
+      },
+      "e2e": {
+        "count": 56,
+        "mean_ms": 120.1,
+        "median_ms": 101.4,
+        "p95_ms": 207.1
+      },
+      "llm": {
+        "count": 44,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0
+      }
     }
   },
-  "report_markdown": "# CampusRAG Phase 7 \u2014 Evaluation Report\n\nDataset `1.0` \u00b7 56 questions \u00b7\nbaseline run 2026-08-14T06:40:29.700707+00:00 \u00b7 phase5 run 2026-08-14T06:40:14.146107+00:00\n\nBaseline = Phase 4 (dense-only, no confidence gate) \u00b7 phase5 = Phase 5 (dense + BM25 \u2192 fuse \u2192 rerank, confidence gate).\nEmbedding `BAAI/bge-base-en-v1.5` \u00b7 reranker `cross-encoder/ms-marco-MiniLM-L-6-v2` \u00b7 LLM `local` \u00b7\neval window top-10 \u00b7 confidence threshold 0.35 \u00b7\nrerank top-10 \u00b7 min similarity 0.65.\n\n### Confidence gate (phase5)\n\n| Bucket | N | Rate |\n| --- | --- | --- |\n| Answerable accepted | 38 | 0.4474 |\n| Answerable rejected (false rejection) | 5 | 0.1163 |\n| Unanswerable rejected (correct refusal) | 7 | 1.0000 |\n| Unanswerable accepted (false acceptance) | 6 | 0.0000 |\n\n## Retrieval quality (answerable questions)\n\n| Metric | Baseline | phase5 | \u0394 |\n| --- | --- | --- | --- |\n| recall@1 | 0.5814 | 0.8837 | +0.3023 |\n| recall@3 | 0.5814 | 0.8837 | +0.3023 |\n| recall@5 | 0.5814 | 0.8837 | +0.3023 |\n| recall@10 | 0.5814 | 0.8837 | +0.3023 |\n| mrr | 0.5814 | 0.8837 | +0.3023 |\n| doc_recall@1 | 0.5814 | 0.8837 | +0.3023 |\n| doc_recall@5 | 0.5814 | 0.8837 | +0.3023 |\n| doc_recall@10 | 0.5814 | 0.8837 | +0.3023 |\n\n## Generation quality\n\n| Metric | Baseline | phase5 | \u0394 |\n| --- | --- | --- | --- |\n| Answer accuracy | 0.3929 | 0.4286 | +0.0357 |\n| Fallback rate | 0.4821 | 0.2143 | -0.2678 |\n| Faithfulness full (2/2) | 0.1964 | 0.2857 | +0.0893 |\n| Faithfulness unsupported (0/2) | 0.6786 | 0.6250 | -0.0536 |\n| Failure rate | 0.5357 | 0.4643 | -0.0714 |\n| Citation validity (mean) | n/a | n/a | n/a |\n\n## Latency (mean per stage)\n\n| Stage | Baseline | phase5 |\n| --- | --- | --- |\n| dense | 73.6 ms | 72.2 ms |\n| bm25 | 0.0 ms | 2.3 ms |\n| fuse | 0.0 ms | 0.0 ms |\n| rerank | 0.0 ms | 47.6 ms |\n| LLM (mean) | 0.0 ms | 0.0 ms |\n| End-to-end (mean) | 73.7 ms | 122.4 ms |\n\n## Category breakdown (phase5)\n\n| Category | N | Recall@5 | Accuracy | Recall@5 (base) | Accuracy (base) |\n| --- | --- | --- | --- | --- | --- |\n| edge | 5 | 1.0000 | 0.4000 | 1.0000 | 0.2000 |\n| entity | 8 | 0.8750 | 0.3750 | 0.3750 | 0.1250 |\n| keyword | 6 | 0.8333 | 0.5000 | 0.6667 | 0.6667 |\n| numeric | 21 | 0.8571 | 0.3810 | 0.5238 | 0.2857 |\n| semantic | 3 | 1.0000 | 0.3333 | 0.6667 | 0.3333 |\n| unanswerable | 13 | 0.0000 | 0.5385 | 0.0000 | 0.6923 |\n\n## Failure analysis (answerable, incorrect answers)\n\n| Failure | Baseline | phase5 |\n| --- | --- | --- |\n| confidence_rejection | 0 | 5 |\n| hallucination | 6 | 16 |\n| retrieval_miss | 18 | 0 |\n| wrong_answer | 6 | 5 |\n\n## Notes\n\n- Retrieval metrics are computed over answerable questions only.\n- Faithfulness is the deterministic 0/1/2 rubric (2 = every expected term in\n  answer is also in retrieved evidence).\n- Citation validity is computed only for answers that actually cite sources.\n- Latency excludes model warm-up; it is measured per query on the evaluation DB.\n- Honest caveats: results reflect a 2-document corpus and the models cached on\n  this machine; they are indicative, not a claim about larger corpora.\n\n### Generation provider caveat\n\nAnswer/faithfulness/citation numbers were produced with the **local\ndeterministic provider** (`LocalExtractiveProvider`, an offline test stub that\nquotes the top retrieved chunk verbatim). Gemini (`gemini-2.5-flash`) was\nattempted first but the free tier was quota-exhausted (HTTP 429\n`RESOURCE_EXHAUSTED`) mid-run, so the real LLM could not complete a full pass\ntoday. The stub is *not* representative of production answer quality, so treat\nthe generation columns as an end-to-end harness check, not as an estimate of\nthe production LLM. Retrieval, confidence-gate and latency numbers are real\nand provider-independent. With a real LLM, some \"unanswerable accepted\"\nquestions would likely still be refused by the model, so the stub overstates\nthe gate's unanswerable failure rate.\n\nFailure labels are approximate diagnostics: with the stub, \"hallucination\"\nlargely means the top reranked chunk did not contain the expected facts\n(rather than the model fabricating content), and phase5 \"confidence_rejection\"\ncoincides with the 5 answerable questions where retrieval found no relevant\nevidence \u2014 i.e. the gate correctly blocked answers on missing evidence.\n"
+  "report_markdown": "# CampusRAG Phase 7 \u2014 Evaluation Report\n\nDataset `1.0` \u00b7 56 questions \u00b7\nbaseline run 2026-08-14T06:58:51.218286+00:00 \u00b7 phase5 run 2026-08-14T06:59:17.457269+00:00\n\nBaseline = Phase 4 (dense-only, no confidence gate) \u00b7 phase5 = Phase 5 (dense + BM25 \u2192 fuse \u2192 rerank, confidence gate).\nEmbedding `BAAI/bge-base-en-v1.5` \u00b7 reranker `cross-encoder/ms-marco-MiniLM-L-6-v2` \u00b7 LLM `local` \u00b7\neval window top-10 \u00b7 confidence threshold 0.35 \u00b7\nrerank top-10 \u00b7 min similarity 0.65.\n\n## Dataset\n\n- 56 questions: 43 answerable, 13 unanswerable.\n- Evidence-in-corpus verification: 43 / 43 answerable questions have their ground-truth\n  supporting text present in the indexed evaluation corpus (checked independently of retrieval). Unanswerable questions have no evidence by design.\n- Corpus documents:\n\n- `academic_regulations` \u2014 2 chunks (reused)\n- `RAG_Test_Document_Edge_Cases` \u2014 9 chunks (reused)\n\n## Retrieval Metrics\n\nRetrieval is scored over the 43 answerable questions only. Each metric is\ncomputed independently per question and then averaged; on this 2-document corpus a relevant chunk, when\nretrieved, always lands at rank 1 (and when missed is never retrieved at any rank), which is why Recall@1,\nRecall@3, Recall@5, Recall@10 and MRR coincide.\n\n| Metric | Baseline | phase5 | \u0394 |\n| --- | --- | --- | --- |\n| recall@1 | 0.5814 | 0.8837 | +0.3023 |\n| recall@3 | 0.5814 | 0.8837 | +0.3023 |\n| recall@5 | 0.5814 | 0.8837 | +0.3023 |\n| recall@10 | 0.5814 | 0.8837 | +0.3023 |\n| mrr | 0.5814 | 0.8837 | +0.3023 |\n| doc_recall@1 | 0.5814 | 0.8837 | +0.3023 |\n| doc_recall@5 | 0.5814 | 0.8837 | +0.3023 |\n| doc_recall@10 | 0.5814 | 0.8837 | +0.3023 |\n\n## Phase 4 vs Phase 5\n\nPhase 5 recovers 13 of the 18 answerable questions that Phase 4 missed\n(Recall@1: 0.5814 \u2192 0.8837), bringing Recall@1 and MRR from 0.5814 to 0.8837.\nThe remaining 5 misses are answered questions where retrieval surfaces no evidence at all\n(dense similarity below the 0.65 min-similarity cutoff AND a BM25 AND-term mismatch); the\nconfidence gate then rejects them rather than answering without evidence. This retrieval\nbehaviour is shared with the production pipeline \u2014 Phase 5 evaluation did not change it.\n\n\n## Confidence Gate (phase5)\n\nGate outcomes per category:\n\n| Category | Total | Accepted | Rejected |\n| --- | --- | --- | --- |\n| Answerable | 43 | 38 | 5 |\n| Unanswerable | 13 | 6 | 7 |\n| Total | 56 | 44 | 12 |\n\nDerived gate metrics (definitions per the Phase 7 audit):\n\n| Metric | Value |\n| --- | --- |\n| False acceptance count (accepted unanswerable) | 6 |\n| False acceptance rate (accepted / unanswerable) | 0.4615 |\n| Correct rejection count (rejected unanswerable) | 7 |\n| Correct rejection rate (rejected / unanswerable) | 0.5385 |\n| False rejection count (rejected answerable w/ corpus evidence) | 5 |\n| False rejection rate (false rejections / answerable w/ evidence) | 0.1163 |\n| Answerable with corpus evidence (denominator) | 43 |\n| Abstention rate ((rej. answerable + rej. unanswerable) / total) | 0.2143 |\n| Answerable accepted accuracy | 0.4474 |\n### Answerable questions rejected by the gate\n\nThe 5 answerable questions that phase5 retrieved no evidence for and that the gate therefore rejected. Each has ground-truth evidence present in the evaluation corpus (`Evidence in corpus = yes`), so these are **false rejections**: the retrieval stages failed to surface the evidence (dense similarity below the 0.65 min-similarity cutoff, and BM25 AND-semantics missing a term), after which the gate correctly refused to answer.\n\n| ID | Question | Expected doc | Evidence in corpus | Evidence retrieved | Gate |\n| --- | --- | --- | --- | --- | --- |\n| Q004 | What grade is worth 9 points? | academic_regulations | yes | no | REJECTED |\n| Q016 | After how long of inactivity does a session time out? | RAG_Test_Document_Edge_Cases | yes | no | REJECTED |\n| Q024 | When did the first production pilot begin? | RAG_Test_Document_Edge_Cases | yes | no | REJECTED |\n| Q030 | Are API keys allowed to be committed to public repositories? | RAG_Test_Document_Edge_Cases | yes | no | REJECTED |\n| Q042 | What are the names of the three locations the team works from? | RAG_Test_Document_Edge_Cases | yes | no | REJECTED |\n\n## Latency\n\nMean / median / p95 milliseconds across all 56 questions. Latency excludes model warm-up and is measured per query on the evaluation DB.\n\n| Stage | Baseline | phase5 |\n| --- | --- | --- |\n| dense | 73.4 / 71.4 / 83.7 ms | 70.3 / 70.4 / 73.4 ms |\n| bm25 | n/a | 2.3 / 2.2 / 3.1 ms |\n| fuse | n/a | 0.0 / 0.0 / 0.0 ms |\n| rerank | n/a | 56.4 / 49.1 / 140.2 ms |\n| llm | 0.0 / 0.0 / 0.0 ms | 0.0 / 0.0 / 0.0 ms |\n| e2e | 73.5 / 71.6 / 83.8 ms | 120.1 / 101.4 / 207.1 ms |\n\n## Answer Evaluation\n\nAnswer metrics were produced with the **local deterministic provider** (see Limitations).\n\n| Metric | Baseline | phase5 | \u0394 |\n| --- | --- | --- | --- |\n| Answer accuracy | 0.3929 | 0.4286 | +0.0357 |\n| Fallback rate | 0.4821 | 0.2143 | -0.2678 |\n| Faithfulness full (2/2) | 0.1964 | 0.2857 | +0.0893 |\n| Faithfulness unsupported (0/2) | 0.6786 | 0.6250 | -0.0536 |\n| Failure rate | 0.5357 | 0.4643 | -0.0714 |\n\n## Citation Evaluation\n\n| Metric | Baseline | phase5 |\n| --- | --- | --- |\n| Citation validity (mean) | n/a | n/a |\n| Questions with citations | 0 | 0 |\n\n## Failure Analysis (answerable, incorrect answers)\n\n| Failure | Baseline | phase5 |\n| --- | --- | --- |\n| confidence_rejection | 0 | 5 |\n| hallucination | 6 | 16 |\n| retrieval_miss | 18 | 0 |\n| wrong_answer | 6 | 5 |\n\n## Category Breakdown (phase5)\n\n| Category | N | Recall@5 | Accuracy | Recall@5 (base) | Accuracy (base) |\n| --- | --- | --- | --- | --- | --- |\n| edge | 5 | 1.0000 | 0.4000 | 1.0000 | 0.2000 |\n| entity | 8 | 0.8750 | 0.3750 | 0.3750 | 0.1250 |\n| keyword | 6 | 0.8333 | 0.5000 | 0.6667 | 0.6667 |\n| numeric | 21 | 0.8571 | 0.3810 | 0.5238 | 0.2857 |\n| semantic | 3 | 1.0000 | 0.3333 | 0.6667 | 0.3333 |\n| unanswerable | 13 | 0.0000 | 0.5385 | 0.0000 | 0.6923 |\n\n## Unanswerable Questions\n\nAll 13 unanswerable questions and the phase5 gate outcome:\n\n| ID | Question | Confidence | Gate | Evidence | LLM ran | Classification |\n| --- | --- | --- | --- | --- | --- | --- |\n| Q044 | What is the CEO's name? | False | REJECT | none (by design) | no | Rejected by gate (correct refusal) |\n| Q045 | What is the PostgreSQL database password? | True | ACCEPT | none (by design) | yes | Accepted; answered (incorrect with stub) |\n| Q046 | What is the embedding API key? | True | ACCEPT | none (by design) | yes | Accepted; answered (incorrect with stub) |\n| Q047 | How many employees does the company have? | False | REJECT | none (by design) | no | Rejected by gate (correct refusal) |\n| Q048 | What is the annual cost of the project? | True | ACCEPT | none (by design) | yes | Accepted; answered (incorrect with stub) |\n| Q049 | Which cloud provider hosts the production database? | True | ACCEPT | none (by design) | yes | Accepted; answered (incorrect with stub) |\n| Q050 | What is the average monthly number of uploaded documents? | True | ACCEPT | none (by design) | yes | Accepted; answered (incorrect with stub) |\n| Q051 | What is the university's tuition fee for undergraduate programmes? | False | REJECT | none (by design) | no | Rejected by gate (correct refusal) |\n| Q052 | What is the exact final release date of version 3.0? | True | ACCEPT | none (by design) | yes | Accepted; answered (incorrect with stub) |\n| Q053 | How much does it cost to apply for the graduate programme? | False | REJECT | none (by design) | no | Rejected by gate (correct refusal) |\n| Q054 | What is the university's official mascot? | False | REJECT | none (by design) | no | Rejected by gate (correct refusal) |\n| Q055 | How many scholarships does the university offer? | False | REJECT | none (by design) | no | Rejected by gate (correct refusal) |\n| Q056 | What is the maximum number of uploads allowed per user per day? | False | REJECT | none (by design) | no | Rejected by gate (correct refusal) |\n\nBy construction unanswerable questions have no supporting evidence, so the `Evidence` column is always none. The 7 rejected items are **correct refusals**; the 6 accepted items are **false acceptances** (see the Confidence Gate section).\n## Limitations\n\n- **Generation provider**: answer/faithfulness/citation numbers were produced with the local\n  deterministic stub (`LocalExtractiveProvider`, an offline test harness that quotes the top\n  retrieved chunk verbatim). Gemini (`gemini-2.5-flash`) was attempted first but the free tier\n  was quota-exhausted (HTTP 429 `RESOURCE_EXHAUSTED`) mid-run and could not complete a full\n  pass, so these columns are an end-to-end harness check, **not** an estimate of production\n  LLM quality. Retrieval, confidence-gate and latency numbers are real and provider-independent.\n- **False acceptance**: 6/13 unanswerable questions (46.15%) were accepted by the gate. With the\n  local stub every accepted unanswerable was answered incorrectly; a real LLM would likely refuse\n  some of them, so the 46.15% overstates the production risk.\n- **False rejection**: 5/43 answerable questions (11.63%) were rejected although their evidence is\n  in the corpus \u2014 this is a genuine retrieval failure surfaced by the gate, not a dataset error.\n  No evaluation dataset labels were changed; no thresholds were tuned to improve these numbers.\n- Corpus is 2 documents / 11 chunks; results are indicative,\n  not a claim about larger corpora.\n- Failure labels are approximate diagnostics: with the stub, \"hallucination\" largely means the\n  top reranked chunk did not contain the expected facts (rather than the model fabricating\n  content), and phase5 `confidence_rejection` coincides exactly with the 5 false rejections above.\n\n## Reproducibility\n\nFrom `backend`:\n\n```bash\npython -m evaluation.run_evaluation --mode baseline --llm-provider local\npython -m evaluation.run_evaluation --mode phase5 --llm-provider local\npython -m evaluation.run_evaluation --compare\n```\n\nRaw per-question results: `evaluation/results/baseline.json`, `evaluation/results/phase5.json`,\naggregated comparison `evaluation/results/comparison.json`. Dataset: `evaluation/dataset.json`\n(version 1.0).\n"
 }

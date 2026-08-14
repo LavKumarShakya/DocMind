@@ -837,33 +837,55 @@ land in `evaluation/results/` (`baseline.json`, `phase5.json`,
 
 | Retrieval (answerable) | Baseline | phase5 | Δ |
 | --- | --- | --- | --- |
-| Recall@1 / @3 / @5 / @10 | 0.5814 | 0.8837 | +0.3023 |
+| Recall@1 | 0.5814 | 0.8837 | +0.3023 |
+| Recall@3 | 0.5814 | 0.8837 | +0.3023 |
+| Recall@5 | 0.5814 | 0.8837 | +0.3023 |
+| Recall@10 | 0.5814 | 0.8837 | +0.3023 |
 | MRR@10 | 0.5814 | 0.8837 | +0.3023 |
+| Doc recall@1 / @5 / @10 | 0.5814 | 0.8837 | +0.3023 |
 
-| Confidence gate (phase5) | N | Rate |
+> On this 2-document corpus a relevant chunk, when retrieved, always lands at
+> rank 1 and is missed at every rank otherwise, so Recall@1/3/5/10 and MRR
+> coincide; each metric is still computed independently per question.
+
+| Confidence gate (phase5) | Count | Rate |
 | --- | --- | --- |
+| Answerable total | 43 | — |
 | Answerable accepted | 38 | accuracy 0.4474 |
-| Answerable rejected (false rejection) | 5 | 0.1163 |
-| Unanswerable rejected (correct refusal) | 7 | 1.0000 |
-| Unanswerable accepted (false acceptance) | 6 | 0.0000 |
+| Answerable rejected (all have corpus evidence) | 5 | false rejection rate 0.1163 |
+| Unanswerable total | 13 | — |
+| Unanswerable rejected (correct refusal) | 7 | correct rejection rate 0.5385 |
+| Unanswerable accepted (false acceptance) | 6 | false acceptance rate 0.4615 |
+| Abstention (all rejected / total) | 12 | 0.2143 |
 
-| Latency (mean) | Baseline | phase5 |
+> **False acceptance rate = accepted unanswerable / total unanswerable =
+> 6/13 = 46.15%** (per the Phase 7 audit definition). An earlier report
+> labelled the *correctness rate among accepted unanswerable* (0/6 = 0.0) as
+> "false acceptance", which was wrong terminology; the corrected metric above
+> is the honest figure. The 5 answerable rejections each have their evidence
+> present in the corpus (retrieval failed to surface it: dense below the 0.65
+> min-similarity cutoff and a BM25 AND-term mismatch), so they are false
+> rejections caused by retrieval, not a dataset error.
+
+| Latency (mean / median / p95 ms) | Baseline | phase5 |
 | --- | --- | --- |
-| Dense | 73.6 ms | 72.2 ms |
-| BM25 | — | 2.3 ms |
-| Rerank | — | 47.6 ms |
-| End-to-end | 73.7 ms | 122.4 ms |
+| Dense | 73.4 / 71.4 / 83.7 | 70.3 / 70.4 / 73.4 |
+| BM25 | — | 2.3 / 2.2 / 3.1 |
+| Rerank | — | 56.4 / 49.1 / 140.2 |
+| End-to-end | 73.5 / 71.6 / 83.8 | 120.1 / 101.4 / 207.1 |
 
 **Honest caveats.** Answer/faithfulness/citation columns in
 `results/report.md` were produced with the **local deterministic provider**
 (the offline test stub), because the Gemini free tier was quota-exhausted
 (HTTP 429) during today's run. Those columns are an end-to-end harness check,
 not a measure of the production LLM. Retrieval, confidence-gate and latency
-numbers are real and provider-independent. The confidence gate correctly
-rejected all 7 unanswerable questions it refused and blocked all 5 answerable
-questions that lacked relevant evidence, but it also accepted 6 unanswerable
-questions (a real LLM would likely still refuse some of these, per the system
-prompt). No threshold was tuned to inflate any number.
+numbers are real and provider-independent. The gate correctly refused all 7
+unanswerable questions it rejected and blocked all 5 answerable questions
+where retrieval surfaced no evidence, but it also **accepted 6 of 13
+unanswerable questions (false acceptance rate 46.15%)**; with the local stub
+each was answered incorrectly, though a real LLM would likely still refuse
+some of them. No threshold was tuned and no dataset labels were changed to
+improve any number.
 
 ---
 

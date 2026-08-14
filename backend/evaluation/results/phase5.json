@@ -29,7 +29,7 @@
         "reused": true
       }
     ],
-    "timestamp_utc": "2026-08-14T06:40:14.146107+00:00",
+    "timestamp_utc": "2026-08-14T06:59:17.457269+00:00",
     "python": "3.13.5",
     "platform": "Windows-11-10.0.26200-SP0"
   },
@@ -49,6 +49,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -63,12 +64,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.267,
-        "bm25": 3.672,
-        "fuse": 0.035,
-        "rerank": 16.999
+        "dense": 75.602,
+        "bm25": 2.662,
+        "fuse": 0.025,
+        "rerank": 16.568
       },
-      "e2e_time_ms": 93.1,
+      "e2e_time_ms": 95.0,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -115,6 +116,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -129,12 +131,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.943,
-        "bm25": 2.968,
-        "fuse": 0.027,
-        "rerank": 17.181
+        "dense": 71.842,
+        "bm25": 2.724,
+        "fuse": 0.018,
+        "rerank": 17.133
       },
-      "e2e_time_ms": 91.3,
+      "e2e_time_ms": 91.9,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -181,6 +183,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -195,12 +198,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.499,
-        "bm25": 2.42,
-        "fuse": 0.018,
-        "rerank": 17.524
+        "dense": 72.092,
+        "bm25": 3.052,
+        "fuse": 0.027,
+        "rerank": 33.92
       },
-      "e2e_time_ms": 90.6,
+      "e2e_time_ms": 109.2,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -247,6 +250,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -261,11 +265,11 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 67.517,
-        "bm25": 2.264,
-        "fuse": 0.006
+        "dense": 70.191,
+        "bm25": 2.625,
+        "fuse": 0.007
       },
-      "e2e_time_ms": 69.8,
+      "e2e_time_ms": 72.8,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -301,6 +305,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -315,12 +320,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 69.183,
-        "bm25": 2.817,
-        "fuse": 0.013,
-        "rerank": 16.231
+        "dense": 72.668,
+        "bm25": 3.087,
+        "fuse": 0.014,
+        "rerank": 15.761
       },
-      "e2e_time_ms": 88.3,
+      "e2e_time_ms": 91.6,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -368,6 +373,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -382,12 +388,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.639,
-        "bm25": 2.411,
-        "fuse": 0.025,
-        "rerank": 9.44
+        "dense": 72.563,
+        "bm25": 1.99,
+        "fuse": 0.021,
+        "rerank": 10.371
       },
-      "e2e_time_ms": 84.6,
+      "e2e_time_ms": 85.1,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -435,6 +441,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -449,12 +456,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 67.5,
-        "bm25": 1.9,
-        "fuse": 0.024,
-        "rerank": 10.753
+        "dense": 71.103,
+        "bm25": 2.423,
+        "fuse": 0.019,
+        "rerank": 9.869
       },
-      "e2e_time_ms": 80.3,
+      "e2e_time_ms": 83.5,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -501,6 +508,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -515,12 +523,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 74.883,
-        "bm25": 1.777,
-        "fuse": 0.018,
-        "rerank": 10.132
+        "dense": 71.258,
+        "bm25": 2.518,
+        "fuse": 0.022,
+        "rerank": 10.795
       },
-      "e2e_time_ms": 86.9,
+      "e2e_time_ms": 84.7,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -568,6 +576,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -582,12 +591,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.109,
-        "bm25": 2.391,
-        "fuse": 0.025,
-        "rerank": 51.205
+        "dense": 70.413,
+        "bm25": 2.173,
+        "fuse": 0.027,
+        "rerank": 51.967
       },
-      "e2e_time_ms": 126.0,
+      "e2e_time_ms": 124.8,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -644,6 +653,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -658,12 +668,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 98.034,
-        "bm25": 3.863,
-        "fuse": 0.053,
-        "rerank": 159.833
+        "dense": 69.323,
+        "bm25": 3.537,
+        "fuse": 0.051,
+        "rerank": 170.773
       },
-      "e2e_time_ms": 262.3,
+      "e2e_time_ms": 244.1,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -754,6 +764,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -768,12 +779,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 73.953,
-        "bm25": 2.402,
-        "fuse": 0.034,
-        "rerank": 69.192
+        "dense": 71.331,
+        "bm25": 1.616,
+        "fuse": 0.022,
+        "rerank": 75.117
       },
-      "e2e_time_ms": 146.0,
+      "e2e_time_ms": 148.4,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -842,6 +853,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -856,12 +868,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.739,
-        "bm25": 2.363,
-        "fuse": 0.03,
-        "rerank": 115.933
+        "dense": 70.523,
+        "bm25": 3.186,
+        "fuse": 0.029,
+        "rerank": 126.091
       },
-      "e2e_time_ms": 189.4,
+      "e2e_time_ms": 200.2,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -942,6 +954,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -956,12 +969,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 67.738,
-        "bm25": 2.878,
-        "fuse": 0.028,
-        "rerank": 143.102
+        "dense": 68.493,
+        "bm25": 2.409,
+        "fuse": 0.017,
+        "rerank": 99.629
       },
-      "e2e_time_ms": 214.3,
+      "e2e_time_ms": 170.9,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1031,6 +1044,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1045,12 +1059,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 100.12,
-        "bm25": 2.312,
-        "fuse": 0.017,
-        "rerank": 93.938
+        "dense": 72.761,
+        "bm25": 2.606,
+        "fuse": 0.015,
+        "rerank": 68.516
       },
-      "e2e_time_ms": 196.7,
+      "e2e_time_ms": 144.2,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1108,6 +1122,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1122,12 +1137,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 85.834,
-        "bm25": 3.762,
-        "fuse": 0.037,
-        "rerank": 127.083
+        "dense": 71.509,
+        "bm25": 3.041,
+        "fuse": 0.032,
+        "rerank": 132.124
       },
-      "e2e_time_ms": 217.1,
+      "e2e_time_ms": 207.1,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1207,6 +1222,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1221,11 +1237,11 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 68.116,
-        "bm25": 1.717,
-        "fuse": 0.005
+        "dense": 67.661,
+        "bm25": 1.677,
+        "fuse": 0.004
       },
-      "e2e_time_ms": 69.9,
+      "e2e_time_ms": 69.4,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -1260,6 +1276,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1274,10 +1291,10 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.314,
-        "bm25": 2.438,
-        "fuse": 0.025,
-        "rerank": 62.522
+        "dense": 70.361,
+        "bm25": 2.631,
+        "fuse": 0.015,
+        "rerank": 62.306
       },
       "e2e_time_ms": 135.6,
       "confident": true,
@@ -1337,6 +1354,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1351,12 +1369,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 65.687,
-        "bm25": 2.216,
-        "fuse": 0.016,
-        "rerank": 46.981
+        "dense": 65.927,
+        "bm25": 2.081,
+        "fuse": 0.014,
+        "rerank": 46.996
       },
-      "e2e_time_ms": 115.1,
+      "e2e_time_ms": 115.3,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1414,6 +1432,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1428,12 +1447,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.235,
-        "bm25": 2.267,
-        "fuse": 0.019,
-        "rerank": 26.861
+        "dense": 69.752,
+        "bm25": 1.663,
+        "fuse": 0.011,
+        "rerank": 26.697
       },
-      "e2e_time_ms": 99.6,
+      "e2e_time_ms": 98.3,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1480,6 +1499,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1494,12 +1514,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 66.025,
-        "bm25": 2.1,
+        "dense": 67.131,
+        "bm25": 2.226,
         "fuse": 0.016,
-        "rerank": 67.471
+        "rerank": 66.772
       },
-      "e2e_time_ms": 135.9,
+      "e2e_time_ms": 136.4,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1558,6 +1578,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1572,12 +1593,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 69.255,
-        "bm25": 2.911,
-        "fuse": 0.025,
-        "rerank": 47.791
+        "dense": 69.664,
+        "bm25": 2.098,
+        "fuse": 0.014,
+        "rerank": 45.682
       },
-      "e2e_time_ms": 120.2,
+      "e2e_time_ms": 117.7,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1634,6 +1655,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1648,12 +1670,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.891,
-        "bm25": 2.988,
-        "fuse": 0.02,
-        "rerank": 29.112
+        "dense": 67.664,
+        "bm25": 1.985,
+        "fuse": 0.013,
+        "rerank": 24.495
       },
-      "e2e_time_ms": 105.2,
+      "e2e_time_ms": 94.3,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1701,6 +1723,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1715,12 +1738,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.327,
-        "bm25": 2.465,
-        "fuse": 0.013,
-        "rerank": 24.39
+        "dense": 68.489,
+        "bm25": 3.518,
+        "fuse": 0.012,
+        "rerank": 22.6
       },
-      "e2e_time_ms": 97.4,
+      "e2e_time_ms": 94.8,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1768,6 +1791,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1782,11 +1806,11 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 68.006,
-        "bm25": 1.886,
-        "fuse": 0.006
+        "dense": 69.211,
+        "bm25": 2.106,
+        "fuse": 0.005
       },
-      "e2e_time_ms": 69.9,
+      "e2e_time_ms": 71.3,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -1822,6 +1846,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1836,12 +1861,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.051,
-        "bm25": 2.676,
-        "fuse": 0.019,
-        "rerank": 99.902
+        "dense": 73.474,
+        "bm25": 3.143,
+        "fuse": 0.028,
+        "rerank": 109.548
       },
-      "e2e_time_ms": 173.0,
+      "e2e_time_ms": 186.5,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1911,6 +1936,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1925,12 +1951,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 76.063,
-        "bm25": 2.88,
+        "dense": 69.605,
+        "bm25": 2.532,
         "fuse": 0.026,
-        "rerank": 49.895
+        "rerank": 49.467
       },
-      "e2e_time_ms": 129.1,
+      "e2e_time_ms": 121.9,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -1988,6 +2014,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2002,12 +2029,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.381,
-        "bm25": 2.254,
-        "fuse": 0.015,
-        "rerank": 48.96
+        "dense": 71.189,
+        "bm25": 2.075,
+        "fuse": 0.016,
+        "rerank": 50.294
       },
-      "e2e_time_ms": 121.8,
+      "e2e_time_ms": 123.8,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2065,6 +2092,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2079,12 +2107,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 68.064,
-        "bm25": 1.815,
-        "fuse": 0.021,
-        "rerank": 19.969
+        "dense": 66.596,
+        "bm25": 1.661,
+        "fuse": 0.013,
+        "rerank": 18.927
       },
-      "e2e_time_ms": 90.0,
+      "e2e_time_ms": 87.4,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2131,6 +2159,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2145,12 +2174,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 69.651,
-        "bm25": 1.948,
-        "fuse": 0.022,
-        "rerank": 19.719
+        "dense": 66.881,
+        "bm25": 1.779,
+        "fuse": 0.014,
+        "rerank": 19.961
       },
-      "e2e_time_ms": 91.5,
+      "e2e_time_ms": 88.8,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2198,6 +2227,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -2212,11 +2242,11 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 69.71,
-        "bm25": 1.642,
-        "fuse": 0.007
+        "dense": 69.401,
+        "bm25": 1.885,
+        "fuse": 0.006
       },
-      "e2e_time_ms": 71.4,
+      "e2e_time_ms": 71.3,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -2252,6 +2282,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2266,12 +2297,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 74.814,
-        "bm25": 2.267,
-        "fuse": 0.028,
-        "rerank": 133.373
+        "dense": 70.479,
+        "bm25": 2.052,
+        "fuse": 0.026,
+        "rerank": 131.971
       },
-      "e2e_time_ms": 210.9,
+      "e2e_time_ms": 204.9,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2352,6 +2383,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2366,12 +2398,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 74.673,
-        "bm25": 2.06,
-        "fuse": 0.047,
-        "rerank": 136.542
+        "dense": 72.729,
+        "bm25": 2.454,
+        "fuse": 0.032,
+        "rerank": 142.286
       },
-      "e2e_time_ms": 213.7,
+      "e2e_time_ms": 217.9,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2452,6 +2484,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2466,12 +2499,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 71.304,
-        "bm25": 2.334,
-        "fuse": 0.023,
-        "rerank": 18.906
+        "dense": 76.714,
+        "bm25": 1.681,
+        "fuse": 0.014,
+        "rerank": 20.362
       },
-      "e2e_time_ms": 92.7,
+      "e2e_time_ms": 98.9,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2518,6 +2551,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2532,12 +2566,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 66.088,
-        "bm25": 2.181,
-        "fuse": 0.021,
-        "rerank": 90.683
+        "dense": 73.164,
+        "bm25": 2.012,
+        "fuse": 0.02,
+        "rerank": 99.115
       },
-      "e2e_time_ms": 159.3,
+      "e2e_time_ms": 174.7,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2606,6 +2640,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2620,12 +2655,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 73.602,
-        "bm25": 1.632,
+        "dense": 73.439,
+        "bm25": 1.644,
         "fuse": 0.018,
-        "rerank": 48.24
+        "rerank": 49.085
       },
-      "e2e_time_ms": 123.7,
+      "e2e_time_ms": 124.4,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2684,6 +2719,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2698,12 +2734,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 73.378,
-        "bm25": 2.592,
-        "fuse": 0.025,
-        "rerank": 103.42
+        "dense": 68.581,
+        "bm25": 2.315,
+        "fuse": 0.021,
+        "rerank": 102.495
       },
-      "e2e_time_ms": 179.8,
+      "e2e_time_ms": 173.8,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2772,6 +2808,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2786,12 +2823,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.534,
-        "bm25": 2.285,
-        "fuse": 0.029,
-        "rerank": 69.326
+        "dense": 73.16,
+        "bm25": 2.375,
+        "fuse": 0.022,
+        "rerank": 69.016
       },
-      "e2e_time_ms": 144.4,
+      "e2e_time_ms": 144.8,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2849,6 +2886,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2863,12 +2901,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 75.027,
-        "bm25": 2.071,
-        "fuse": 0.014,
-        "rerank": 28.197
+        "dense": 67.283,
+        "bm25": 3.096,
+        "fuse": 0.019,
+        "rerank": 33.268
       },
-      "e2e_time_ms": 105.5,
+      "e2e_time_ms": 103.8,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2915,6 +2953,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2929,12 +2968,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.997,
-        "bm25": 2.008,
+        "dense": 70.677,
+        "bm25": 2.397,
         "fuse": 0.013,
-        "rerank": 25.249
+        "rerank": 24.698
       },
-      "e2e_time_ms": 100.4,
+      "e2e_time_ms": 98.0,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -2985,6 +3024,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2999,12 +3039,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 68.219,
-        "bm25": 2.024,
-        "fuse": 0.017,
-        "rerank": 49.006
+        "dense": 72.203,
+        "bm25": 2.235,
+        "fuse": 0.018,
+        "rerank": 49.349
       },
-      "e2e_time_ms": 119.5,
+      "e2e_time_ms": 124.0,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -3064,6 +3104,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -3078,12 +3119,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 71.854,
-        "bm25": 2.12,
-        "fuse": 0.022,
-        "rerank": 67.602
+        "dense": 71.464,
+        "bm25": 2.761,
+        "fuse": 0.017,
+        "rerank": 69.89
       },
-      "e2e_time_ms": 141.9,
+      "e2e_time_ms": 144.4,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -3142,6 +3183,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3156,11 +3198,11 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 77.124,
-        "bm25": 3.029,
-        "fuse": 0.009
+        "dense": 69.94,
+        "bm25": 2.107,
+        "fuse": 0.007
       },
-      "e2e_time_ms": 80.2,
+      "e2e_time_ms": 72.1,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -3195,6 +3237,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -3209,12 +3252,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 73.131,
-        "bm25": 1.726,
-        "fuse": 0.029,
-        "rerank": 133.877
+        "dense": 70.85,
+        "bm25": 1.814,
+        "fuse": 0.025,
+        "rerank": 140.249
       },
-      "e2e_time_ms": 209.3,
+      "e2e_time_ms": 213.3,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -3289,6 +3332,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3302,12 +3346,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 73.719,
-        "bm25": 2.185,
-        "fuse": 0.016,
-        "rerank": 26.767
+        "dense": 67.182,
+        "bm25": 1.956,
+        "fuse": 0.014,
+        "rerank": 27.27
       },
-      "e2e_time_ms": 102.7,
+      "e2e_time_ms": 96.5,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -3349,6 +3393,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3362,12 +3407,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 71.217,
-        "bm25": 3.619,
-        "fuse": 0.031,
-        "rerank": 126.243
+        "dense": 70.549,
+        "bm25": 2.687,
+        "fuse": 0.024,
+        "rerank": 95.968
       },
-      "e2e_time_ms": 201.2,
+      "e2e_time_ms": 169.3,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -3431,6 +3476,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3444,12 +3490,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 65.652,
-        "bm25": 1.968,
-        "fuse": 0.012,
-        "rerank": 26.423
+        "dense": 69.23,
+        "bm25": 2.227,
+        "fuse": 0.014,
+        "rerank": 26.805
       },
-      "e2e_time_ms": 94.1,
+      "e2e_time_ms": 98.4,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -3491,6 +3537,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3504,12 +3551,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 71.319,
-        "bm25": 2.279,
-        "fuse": 0.015,
-        "rerank": 28.762
+        "dense": 70.446,
+        "bm25": 1.807,
+        "fuse": 0.012,
+        "rerank": 26.705
       },
-      "e2e_time_ms": 102.4,
+      "e2e_time_ms": 99.0,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -3551,6 +3598,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3564,12 +3612,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.524,
-        "bm25": 2.062,
-        "fuse": 0.014,
-        "rerank": 15.266
+        "dense": 71.325,
+        "bm25": 2.118,
+        "fuse": 0.018,
+        "rerank": 16.099
       },
-      "e2e_time_ms": 89.9,
+      "e2e_time_ms": 89.6,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -3611,6 +3659,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3624,12 +3673,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.977,
-        "bm25": 2.054,
-        "fuse": 0.014,
-        "rerank": 14.007
+        "dense": 69.647,
+        "bm25": 1.859,
+        "fuse": 0.016,
+        "rerank": 15.797
       },
-      "e2e_time_ms": 87.1,
+      "e2e_time_ms": 87.4,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -3671,6 +3720,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3684,12 +3734,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 71.33,
-        "bm25": 2.505,
+        "dense": 70.575,
+        "bm25": 2.711,
         "fuse": 0.032,
-        "rerank": 47.434
+        "rerank": 49.53
       },
-      "e2e_time_ms": 121.4,
+      "e2e_time_ms": 122.9,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -3742,6 +3792,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3755,11 +3806,11 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 73.604,
-        "bm25": 1.925,
-        "fuse": 0.005
+        "dense": 70.81,
+        "bm25": 2.351,
+        "fuse": 0.009
       },
-      "e2e_time_ms": 75.5,
+      "e2e_time_ms": 73.2,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -3789,6 +3840,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3802,12 +3854,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.205,
-        "bm25": 2.443,
+        "dense": 69.535,
+        "bm25": 2.335,
         "fuse": 0.017,
-        "rerank": 48.426
+        "rerank": 49.636
       },
-      "e2e_time_ms": 121.2,
+      "e2e_time_ms": 121.6,
       "confident": true,
       "gate_applied": true,
       "llm_skipped": false,
@@ -3860,6 +3912,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3873,11 +3926,11 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 72.385,
-        "bm25": 2.426,
+        "dense": 67.671,
+        "bm25": 1.66,
         "fuse": 0.006
       },
-      "e2e_time_ms": 74.8,
+      "e2e_time_ms": 69.4,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -3907,6 +3960,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3920,11 +3974,11 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 65.343,
-        "bm25": 1.691,
+        "dense": 66.151,
+        "bm25": 1.516,
         "fuse": 0.005
       },
-      "e2e_time_ms": 67.1,
+      "e2e_time_ms": 67.7,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -3954,6 +4008,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3967,11 +4022,11 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 70.315,
-        "bm25": 1.637,
-        "fuse": 0.006
+        "dense": 66.428,
+        "bm25": 1.632,
+        "fuse": 0.005
       },
-      "e2e_time_ms": 72.0,
+      "e2e_time_ms": 68.1,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -4001,6 +4056,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -4014,12 +4070,12 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.531,
-        "bm25": 1.88,
-        "fuse": 0.025,
-        "rerank": 27.233
+        "dense": 70.318,
+        "bm25": 1.741,
+        "fuse": 0.017,
+        "rerank": 26.712
       },
-      "e2e_time_ms": 99.7,
+      "e2e_time_ms": 98.8,
       "confident": false,
       "gate_applied": true,
       "llm_skipped": true,
@@ -4064,6 +4120,44 @@
     "doc_recall@1": 0.8837,
     "doc_recall@5": 0.8837,
     "doc_recall@10": 0.8837,
+    "latency": {
+      "dense": {
+        "count": 56,
+        "mean_ms": 70.3,
+        "median_ms": 70.4,
+        "p95_ms": 73.4
+      },
+      "bm25": {
+        "count": 56,
+        "mean_ms": 2.3,
+        "median_ms": 2.2,
+        "p95_ms": 3.1
+      },
+      "fuse": {
+        "count": 56,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0
+      },
+      "rerank": {
+        "count": 47,
+        "mean_ms": 56.4,
+        "median_ms": 49.1,
+        "p95_ms": 140.2
+      },
+      "e2e": {
+        "count": 56,
+        "mean_ms": 120.1,
+        "median_ms": 101.4,
+        "p95_ms": 207.1
+      },
+      "llm": {
+        "count": 44,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0
+      }
+    },
     "answered": 56,
     "answer_accuracy": 0.4286,
     "fallback_rate": 0.2143,
@@ -4079,21 +4173,29 @@
     "citation_questions_with_tags": 0,
     "confidence": {
       "answerable": {
+        "total": 43,
         "accepted": 38,
         "rejected": 5,
         "accepted_correct": 17,
         "accepted_accuracy": 0.4474
       },
       "unanswerable": {
+        "total": 13,
         "accepted": 6,
         "rejected": 7,
         "rejected_correct": 7,
-        "rejection_rate": 1.0
+        "accepted_correct": 0
       },
-      "rejection_rate_answerable": 0.1163,
-      "false_acceptance": 0.0
+      "false_acceptance_count": 6,
+      "false_acceptance_rate": 0.4615,
+      "correct_rejection_count": 7,
+      "correct_rejection_rate": 0.5385,
+      "false_rejection_count": 5,
+      "false_rejection_rate": 0.1163,
+      "answerable_with_evidence": 43,
+      "abstention_rate": 0.2143
     },
-    "rejection_rate_answerable": 0.1163,
+    "abstention_rate": 0.2143,
     "category_breakdown": {
       "edge": {
         "count": 5,

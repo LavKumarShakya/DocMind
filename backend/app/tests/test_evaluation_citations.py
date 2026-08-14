@@ -1,10 +1,10 @@
-"""Unit tests for the confidence-gate 2x2 analysis and citation metrics."""
+"""Unit tests for the confidence-gate analysis and citation metrics."""
 
 import uuid
 
 from app.services.retrieval_types import RetrievalCandidate
 from evaluation.citations import analyze_citations, citation_recall
-from evaluation.confidence import classify, confusion_matrix
+from evaluation.confidence import confusion_matrix
 from evaluation.dataset import Question
 
 
@@ -38,34 +38,95 @@ def _candidate(title: str, text: str) -> RetrievalCandidate:
     )
 
 
-def test_classify_buckets():
-    assert classify(_question(), True) == "answerable::accepted"
-    assert classify(_question(), False) == "answerable::rejected"
-    assert classify(_question(answerable=False), True) == "unanswerable::accepted"
-    assert classify(_question(answerable=False), False) == "unanswerable::rejected"
+def _row(answerable, confident, correct, evidence=True) -> dict:
+    return {
+        "answerable": answerable,
+        "confident": confident,
+        "correct": correct,
+        "evidence_in_corpus": evidence,
+    }
 
 
 def test_confusion_matrix_counts_and_rates():
     rows = [
-        {"bucket": "answerable::accepted", "correct": True},
-        {"bucket": "answerable::accepted", "correct": False},
-        {"bucket": "answerable::rejected", "correct": False},
-        {"bucket": "unanswerable::rejected", "correct": True},
-        {"bucket": "unanswerable::accepted", "correct": True},
+        _row(answerable=True, confident=True, correct=True),
+        _row(answerable=True, confident=True, correct=False),
+        _row(answerable=True, confident=False, correct=False),
+        _row(answerable=False, confident=False, correct=False),
+        _row(answerable=False, confident=True, correct=False),
     ]
     m = confusion_matrix(rows)
+    assert m["answerable"]["total"] == 3
     assert m["answerable"]["accepted"] == 2
     assert m["answerable"]["rejected"] == 1
     assert m["answerable"]["accepted_accuracy"] == 0.5
-    assert m["rejection_rate_answerable"] == 0.3333
+    assert m["unanswerable"]["total"] == 2
+    assert m["unanswerable"]["accepted"] == 1
     assert m["unanswerable"]["rejected"] == 1
-    assert m["unanswerable"]["rejection_rate"] == 1.0
-    assert m["false_acceptance"] == 1.0
+    assert m["false_acceptance_count"] == 1
+    assert m["false_acceptance_rate"] == 0.5
+    assert m["correct_rejection_count"] == 1
+    assert m["correct_rejection_rate"] == 0.5
 
 
-def test_confusion_matrix_empty_bucket_rate_is_none():
-    m = confusion_matrix([{"bucket": "answerable::accepted", "correct": True}])
-    assert m["unanswerable"]["rejection_rate"] is None
+def test_confusion_matrix_false_rejection_requires_corpus_evidence():
+    m = confusion_matrix([
+        _row(answerable=True, confident=False, correct=False, evidence=False),
+    ])
+    assert m["false_rejection_count"] == 0
+    assert m["false_rejection_rate"] is None
+    assert m["answerable_with_evidence"] == 0
+
+    m = confusion_matrix([
+        _row(answerable=True, confident=False, correct=False, evidence=True),
+    ])
+    assert m["false_rejection_count"] == 1
+    assert m["false_rejection_rate"] == 1.0
+    assert m["answerable_with_evidence"] == 1
+
+
+def test_confusion_matrix_zero_denominators_are_none_not_nan():
+    empty = confusion_matrix([])
+    assert empty["false_acceptance_rate"] is None
+    assert empty["correct_rejection_rate"] is None
+    assert empty["false_rejection_rate"] is None
+    assert empty["abstention_rate"] is None
+
+    no_unanswerable = confusion_matrix([
+        _row(answerable=True, confident=True, correct=True),
+    ])
+    assert no_unanswerable["false_acceptance_rate"] is None
+    assert no_unanswerable["correct_rejection_rate"] is None
+
+    no_answerable = confusion_matrix([
+        _row(answerable=False, confident=False, correct=False),
+    ])
+    assert no_answerable["false_rejection_rate"] is None
+    assert no_answerable["answerable_with_evidence"] == 0
+
+
+def test_confusion_matrix_phase5_scale_false_acceptance():
+    rows = (
+        [_row(answerable=False, confident=False, correct=False) for _ in range(7)]
+        + [_row(answerable=False, confident=True, correct=False) for _ in range(6)]
+        + [_row(answerable=True, confident=True, correct=False) for _ in range(38)]
+        + [_row(answerable=True, confident=False, correct=False) for _ in range(5)]
+    )
+    m = confusion_matrix(rows)
+    assert m["false_acceptance_count"] == 6
+    assert m["false_acceptance_rate"] == round(6 / 13, 4)
+    assert m["correct_rejection_count"] == 7
+    assert m["correct_rejection_rate"] == round(7 / 13, 4)
+    assert m["abstention_rate"] == round((5 + 7) / 56, 4)
+
+
+def test_confusion_matrix_no_false_acceptance_when_all_rejected():
+    rows = [_row(answerable=False, confident=False, correct=False) for _ in range(13)]
+    m = confusion_matrix(rows)
+    assert m["false_acceptance_count"] == 0
+    assert m["false_acceptance_rate"] == 0.0
+    assert m["correct_rejection_count"] == 13
+    assert m["correct_rejection_rate"] == 1.0
 
 
 def test_analyze_citations_valid_and_supported():

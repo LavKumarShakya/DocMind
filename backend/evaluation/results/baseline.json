@@ -29,7 +29,7 @@
         "reused": true
       }
     ],
-    "timestamp_utc": "2026-08-14T06:40:29.700707+00:00",
+    "timestamp_utc": "2026-08-14T06:58:51.218286+00:00",
     "python": "3.13.5",
     "platform": "Windows-11-10.0.26200-SP0"
   },
@@ -49,6 +49,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -63,9 +64,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.385
+        "dense": 71.615
       },
-      "e2e_time_ms": 70.5,
+      "e2e_time_ms": 71.8,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -112,6 +113,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -126,7 +128,7 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 71.542
+        "dense": 71.474
       },
       "e2e_time_ms": 71.6,
       "confident": false,
@@ -175,6 +177,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -189,9 +192,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 67.48
+        "dense": 70.976
       },
-      "e2e_time_ms": 67.6,
+      "e2e_time_ms": 71.1,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -238,6 +241,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -252,9 +256,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 67.876
+        "dense": 72.138
       },
-      "e2e_time_ms": 67.9,
+      "e2e_time_ms": 72.2,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -290,6 +294,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -304,9 +309,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 71.135
+        "dense": 66.788
       },
-      "e2e_time_ms": 71.1,
+      "e2e_time_ms": 66.8,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -342,6 +347,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -356,9 +362,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 68.156
+        "dense": 75.885
       },
-      "e2e_time_ms": 68.2,
+      "e2e_time_ms": 76.0,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -406,6 +412,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -420,9 +427,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 71.491
+        "dense": 71.646
       },
-      "e2e_time_ms": 71.6,
+      "e2e_time_ms": 71.7,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -469,6 +476,7 @@
       "relevant_documents": [
         "academic_regulations"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -483,9 +491,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 75.645
+        "dense": 71.557
       },
-      "e2e_time_ms": 75.7,
+      "e2e_time_ms": 71.6,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -533,6 +541,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -547,9 +556,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 67.963
+        "dense": 68.116
       },
-      "e2e_time_ms": 68.1,
+      "e2e_time_ms": 68.4,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -606,6 +615,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -620,9 +630,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 67.95
+        "dense": 71.332
       },
-      "e2e_time_ms": 68.3,
+      "e2e_time_ms": 71.6,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -702,6 +712,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -716,9 +727,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 74.168
+        "dense": 71.209
       },
-      "e2e_time_ms": 74.4,
+      "e2e_time_ms": 71.5,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -787,6 +798,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -801,9 +813,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 67.527
+        "dense": 67.126
       },
-      "e2e_time_ms": 67.9,
+      "e2e_time_ms": 67.5,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -873,6 +885,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -887,9 +900,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 69.457
+        "dense": 100.826
       },
-      "e2e_time_ms": 69.5,
+      "e2e_time_ms": 100.8,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -925,6 +938,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -939,9 +953,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.061
+        "dense": 72.106
       },
-      "e2e_time_ms": 72.2,
+      "e2e_time_ms": 72.3,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -988,6 +1002,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1002,9 +1017,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 67.325
+        "dense": 74.616
       },
-      "e2e_time_ms": 67.3,
+      "e2e_time_ms": 74.6,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1039,6 +1054,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1053,9 +1069,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 71.864
+        "dense": 72.068
       },
-      "e2e_time_ms": 71.9,
+      "e2e_time_ms": 72.1,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1090,6 +1106,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1104,9 +1121,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 67.986
+        "dense": 71.957
       },
-      "e2e_time_ms": 68.1,
+      "e2e_time_ms": 72.1,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -1153,6 +1170,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1167,9 +1185,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 67.219
+        "dense": 71.052
       },
-      "e2e_time_ms": 67.2,
+      "e2e_time_ms": 71.1,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1204,6 +1222,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1218,9 +1237,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 67.992
+        "dense": 63.9
       },
-      "e2e_time_ms": 68.0,
+      "e2e_time_ms": 63.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1255,6 +1274,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1269,9 +1289,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 71.705
+        "dense": 67.497
       },
-      "e2e_time_ms": 71.7,
+      "e2e_time_ms": 67.5,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1307,6 +1327,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1321,9 +1342,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 71.812
+        "dense": 67.848
       },
-      "e2e_time_ms": 71.8,
+      "e2e_time_ms": 67.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1357,6 +1378,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1371,9 +1393,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 71.776
+        "dense": 72.259
       },
-      "e2e_time_ms": 71.8,
+      "e2e_time_ms": 72.3,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1409,6 +1431,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1423,9 +1446,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 71.879
+        "dense": 63.371
       },
-      "e2e_time_ms": 71.9,
+      "e2e_time_ms": 63.4,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1461,6 +1484,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1475,7 +1499,7 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 67.849
+        "dense": 67.85
       },
       "e2e_time_ms": 67.9,
       "confident": false,
@@ -1513,6 +1537,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1527,9 +1552,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 71.704
+        "dense": 75.835
       },
-      "e2e_time_ms": 71.7,
+      "e2e_time_ms": 75.8,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1565,6 +1590,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1579,9 +1605,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 67.982
+        "dense": 71.865
       },
-      "e2e_time_ms": 68.0,
+      "e2e_time_ms": 71.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1616,6 +1642,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1630,9 +1657,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.708
+        "dense": 72.652
       },
-      "e2e_time_ms": 72.8,
+      "e2e_time_ms": 72.7,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -1679,6 +1706,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1693,9 +1721,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 66.46
+        "dense": 70.799
       },
-      "e2e_time_ms": 66.6,
+      "e2e_time_ms": 70.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -1742,6 +1770,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1756,9 +1785,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 80.016
+        "dense": 71.569
       },
-      "e2e_time_ms": 80.2,
+      "e2e_time_ms": 71.7,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -1806,6 +1835,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -1820,9 +1850,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 70.734
+        "dense": 71.351
       },
-      "e2e_time_ms": 70.7,
+      "e2e_time_ms": 71.4,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -1858,6 +1888,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1872,9 +1903,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 73.116
+        "dense": 72.482
       },
-      "e2e_time_ms": 73.5,
+      "e2e_time_ms": 72.8,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -1955,6 +1986,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -1969,9 +2001,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 74.029
+        "dense": 70.713
       },
-      "e2e_time_ms": 74.3,
+      "e2e_time_ms": 71.0,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -2052,6 +2084,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2066,9 +2099,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 69.788
+        "dense": 70.125
       },
-      "e2e_time_ms": 69.9,
+      "e2e_time_ms": 70.2,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -2115,6 +2148,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2129,9 +2163,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 76.084
+        "dense": 75.57
       },
-      "e2e_time_ms": 76.3,
+      "e2e_time_ms": 75.7,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -2189,6 +2223,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2203,9 +2238,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.716
+        "dense": 71.098
       },
-      "e2e_time_ms": 71.0,
+      "e2e_time_ms": 71.3,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -2264,6 +2299,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2278,9 +2314,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 71.399
+        "dense": 75.515
       },
-      "e2e_time_ms": 71.6,
+      "e2e_time_ms": 75.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -2349,6 +2385,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2363,9 +2400,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 70.379
+        "dense": 70.761
       },
-      "e2e_time_ms": 70.6,
+      "e2e_time_ms": 71.1,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -2423,6 +2460,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -2437,9 +2475,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 74.942
+        "dense": 154.194
       },
-      "e2e_time_ms": 75.0,
+      "e2e_time_ms": 154.2,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -2474,6 +2512,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -2488,9 +2527,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 75.864
+        "dense": 83.805
       },
-      "e2e_time_ms": 75.9,
+      "e2e_time_ms": 83.8,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -2529,6 +2568,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2543,9 +2583,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 79.82
+        "dense": 83.703
       },
-      "e2e_time_ms": 80.0,
+      "e2e_time_ms": 83.8,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -2594,6 +2634,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2608,9 +2649,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 75.396
+        "dense": 75.317
       },
-      "e2e_time_ms": 75.6,
+      "e2e_time_ms": 75.4,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -2658,6 +2699,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -2672,9 +2714,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 74.633
+        "dense": 71.313
       },
-      "e2e_time_ms": 74.7,
+      "e2e_time_ms": 71.3,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -2709,6 +2751,7 @@
       "relevant_documents": [
         "RAG_Test_Document_Edge_Cases"
       ],
+      "evidence_in_corpus": true,
       "retrieval_metrics": {
         "recall@1": 1.0,
         "recall@3": 1.0,
@@ -2723,9 +2766,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.769
+        "dense": 69.218
       },
-      "e2e_time_ms": 73.2,
+      "e2e_time_ms": 69.7,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -2800,6 +2843,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -2813,9 +2857,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 73.393
+        "dense": 68.851
       },
-      "e2e_time_ms": 73.4,
+      "e2e_time_ms": 68.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -2845,6 +2889,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -2858,9 +2903,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 71.84
+        "dense": 72.055
       },
-      "e2e_time_ms": 71.9,
+      "e2e_time_ms": 72.1,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -2890,6 +2935,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -2903,9 +2949,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 139.906
+        "dense": 67.808
       },
-      "e2e_time_ms": 139.9,
+      "e2e_time_ms": 67.8,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -2935,6 +2981,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -2948,9 +2995,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 75.6
+        "dense": 67.857
       },
-      "e2e_time_ms": 75.6,
+      "e2e_time_ms": 67.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -2980,6 +3027,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -2993,9 +3041,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 83.873
+        "dense": 71.796
       },
-      "e2e_time_ms": 83.9,
+      "e2e_time_ms": 71.8,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -3025,6 +3073,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3038,9 +3087,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 83.914
+        "dense": 68.268
       },
-      "e2e_time_ms": 84.0,
+      "e2e_time_ms": 68.3,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -3082,6 +3131,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3095,9 +3145,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 72.307
+        "dense": 75.849
       },
-      "e2e_time_ms": 72.4,
+      "e2e_time_ms": 75.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -3150,6 +3200,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3163,9 +3214,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 75.058
+        "dense": 71.249
       },
-      "e2e_time_ms": 75.1,
+      "e2e_time_ms": 71.3,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -3195,6 +3246,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3208,9 +3260,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 84.154
+        "dense": 68.205
       },
-      "e2e_time_ms": 84.2,
+      "e2e_time_ms": 68.2,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -3252,6 +3304,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3265,9 +3318,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 75.233
+        "dense": 67.847
       },
-      "e2e_time_ms": 75.2,
+      "e2e_time_ms": 67.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -3297,6 +3350,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3310,9 +3364,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 72.247
+        "dense": 75.43
       },
-      "e2e_time_ms": 72.3,
+      "e2e_time_ms": 75.4,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -3342,6 +3396,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3355,9 +3410,9 @@
         "retrieved_any": false
       },
       "stage_times": {
-        "dense": 67.688
+        "dense": 67.843
       },
-      "e2e_time_ms": 67.7,
+      "e2e_time_ms": 67.9,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": true,
@@ -3387,6 +3442,7 @@
       "expected_answer": null,
       "expected_answer_terms": [],
       "relevant_documents": [],
+      "evidence_in_corpus": false,
       "retrieval_metrics": {
         "recall@1": 0.0,
         "recall@3": 0.0,
@@ -3400,9 +3456,9 @@
         "retrieved_any": true
       },
       "stage_times": {
-        "dense": 76.196
+        "dense": 72.331
       },
-      "e2e_time_ms": 76.2,
+      "e2e_time_ms": 72.4,
       "confident": false,
       "gate_applied": false,
       "llm_skipped": false,
@@ -3447,6 +3503,26 @@
     "doc_recall@1": 0.5814,
     "doc_recall@5": 0.5814,
     "doc_recall@10": 0.5814,
+    "latency": {
+      "dense": {
+        "count": 56,
+        "mean_ms": 73.4,
+        "median_ms": 71.4,
+        "p95_ms": 83.7
+      },
+      "e2e": {
+        "count": 56,
+        "mean_ms": 73.5,
+        "median_ms": 71.6,
+        "p95_ms": 83.8
+      },
+      "llm": {
+        "count": 29,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0
+      }
+    },
     "answered": 56,
     "answer_accuracy": 0.3929,
     "fallback_rate": 0.4821,
