@@ -11,12 +11,12 @@ from __future__ import annotations
 import uuid
 from datetime import date
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.enums import AccessLevel, DocumentStatus, Role
 from app.core.errors import ApiError
-from app.db.models import Document, DocumentChunk, User
+from app.db.models import Document, DocumentChunk, DocumentVersion, User
 
 # Higher value = more privileged.
 _LEVEL_ORDER: dict[AccessLevel, int] = {
@@ -65,6 +65,21 @@ def create_document(
         uploaded_by=uploader.id,
     )
     db.add(document)
+    db.flush()
+
+    # The first upload is version 1 of the document.
+    version = DocumentVersion(
+        document_id=document.id,
+        version_number=1,
+        status=DocumentStatus.UPLOADED,
+        filename=original_filename,
+        storage_path=file_path,
+        file_size=file_size,
+    )
+    db.add(version)
+    db.flush()
+    document.current_version_id = version.id
+
     db.commit()
     db.refresh(document)
     return document
@@ -163,8 +178,6 @@ def update_document(db: Session, document: Document, payload: dict) -> Document:
 
 
 def count_chunks(db: Session, document_id: uuid.UUID) -> int:
-    from sqlalchemy import func
-
     return (
         db.scalar(
             select(func.count(DocumentChunk.id)).where(
@@ -175,6 +188,116 @@ def count_chunks(db: Session, document_id: uuid.UUID) -> int:
     )
 
 
+def next_version_number(db: Session, document_id: uuid.UUID) -> int:
+    """Return ``max(version_number) + 1`` for a document (1 when none exist)."""
+    current = db.scalar(
+        select(func.max(DocumentVersion.version_number)).where(
+            DocumentVersion.document_id == document_id
+        )
+    )
+    return (current or 0) + 1
+
+
+def list_versions(db: Session, document: Document) -> list[DocumentVersion]:
+    """Return a document's versions, newest first."""
+    return list(
+        db.scalars(
+            select(DocumentVersion)
+            .where(DocumentVersion.document_id == document.id)
+            .order_by(DocumentVersion.version_number.desc())
+        ).all()
+    )
+
+
+def get_version(
+    db: Session, document: Document, version_id: uuid.UUID
+) -> DocumentVersion:
+    """Fetch a version belonging to ``document`` (404 otherwise)."""
+    version = db.scalar(
+        select(DocumentVersion).where(
+            DocumentVersion.id == version_id,
+            DocumentVersion.document_id == document.id,
+        )
+    )
+    if version is None:
+        raise ApiError("VERSION_NOT_FOUND", "The version could not be found.", status_code=404)
+    return version
+
+
+def _snapshot_current_as_version(db: Session, document: Document) -> None:
+    """Legacy documents (no version rows) get their current file snapshotted.
+
+    Used so uploading a new version to a pre-Phase-6 document preserves the
+    previous file instead of silently replacing it.
+    """
+    if document.current_version_id is not None:
+        return
+    db.add(
+        DocumentVersion(
+            document_id=document.id,
+            version_number=1,
+            status=DocumentStatus.ARCHIVED,
+            filename=document.original_filename,
+            storage_path=document.file_path,
+            file_size=document.file_size,
+            page_count=document.page_count,
+            processed_at=document.processed_at,
+        )
+    )
+
+
+def create_version(
+    db: Session,
+    document: Document,
+    *,
+    version_number: int,
+    filename: str,
+    storage_path: str,
+    file_size: int,
+    mime_type: str,
+) -> DocumentVersion:
+    """Register a new version and switch the document to it.
+
+    The previous current version is archived (never deleted). The document's
+    file pointers move to the new file and its status resets to UPLOADED so the
+    new version must be processed before it is used by retrieval.
+    """
+    _snapshot_current_as_version(db, document)
+
+    if document.current_version_id is not None:
+        previous = db.get(DocumentVersion, document.current_version_id)
+        if previous is not None and previous.status == DocumentStatus.ACTIVE:
+            previous.status = DocumentStatus.ARCHIVED
+            db.add(previous)
+
+    version = DocumentVersion(
+        document_id=document.id,
+        version_number=version_number,
+        status=DocumentStatus.UPLOADED,
+        filename=filename,
+        storage_path=storage_path,
+        file_size=file_size,
+    )
+    db.add(version)
+    db.flush()
+
+    document.current_version_id = version.id
+    document.file_path = storage_path
+    document.original_filename = filename
+    document.mime_type = mime_type
+    document.file_size = file_size
+    document.version = str(version_number)
+    document.status = DocumentStatus.UPLOADED
+    document.processing_error = None
+    document.page_count = None
+    document.processed_at = None
+
+    db.add(document)
+    db.commit()
+    db.refresh(version)
+    return version
+
+
 def delete_document(
     db: Session,
     document: Document,
@@ -182,12 +305,15 @@ def delete_document(
     delete_file: bool = True,
     file_deleter=None,
 ) -> None:
-    """Delete chunks and the document record; storage cleanup runs after commit.
+    """Delete chunks, versions and the document record; storage cleanup runs after commit.
 
-    ``document.file_path`` is captured before the record is removed so the
-    stored file can be deleted even if a later step fails.
+    ``document.file_path`` and every version's storage path are captured before
+    the record is removed so all stored files can be deleted even if a later
+    step fails.
     """
-    stored_path = document.file_path
+    stored_paths = [document.file_path] + [
+        version.storage_path for version in document.versions
+    ]
     db.execute(delete(DocumentChunk).where(DocumentChunk.document_id == document.id))
     db.delete(document)
     db.commit()
@@ -196,9 +322,9 @@ def delete_document(
         if file_deleter is None:
             from app.services import storage_service
 
-            file_deleter = storage_service.delete_document_file
+            file_deleter = storage_service.delete_document_files
         try:
-            file_deleter(stored_path)
+            file_deleter(stored_paths)
         except Exception:
             # DB state is already consistent; storage cleanup is best-effort so
             # a leftover file never breaks the API. Logged by the caller.

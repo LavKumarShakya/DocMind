@@ -1,4 +1,4 @@
-"""Document endpoints: upload, list, detail, edit, process, delete."""
+"""Document endpoints: upload, list, detail, edit, process, delete, versions."""
 
 from __future__ import annotations
 
@@ -11,8 +11,12 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.database import get_db
-from app.db.models import Document, User
-from app.schemas.document import DocumentResponse, DocumentUpdate
+from app.db.models import Document, DocumentVersion, User
+from app.schemas.document import (
+    DocumentResponse,
+    DocumentUpdate,
+    DocumentVersionResponse,
+)
 from app.services import document_service, ingestion_service, pdf_service, storage_service
 
 logger = logging.getLogger(__name__)
@@ -145,3 +149,86 @@ def delete_document(
     document = document_service.get_manageable_document(db, document_id, current_user)
     document_service.delete_document(db, document)
     return {"status": "deleted"}
+
+
+def _version_response(version: DocumentVersion) -> DocumentVersionResponse:
+    return DocumentVersionResponse.model_validate(version)
+
+
+@router.get(
+    "/{document_id}/versions",
+    response_model=list[DocumentVersionResponse],
+    summary="List a document's versions (newest first)",
+)
+def list_versions(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[DocumentVersionResponse]:
+    document = document_service.get_visible_document(db, document_id, current_user)
+    return [
+        _version_response(v)
+        for v in document_service.list_versions(db, document)
+    ]
+
+
+@router.post(
+    "/{document_id}/versions",
+    response_model=DocumentVersionResponse,
+    status_code=201,
+    summary="Upload a new version of a document",
+)
+def upload_version(
+    document_id: uuid.UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DocumentVersionResponse:
+    """Upload a replacement PDF as a new version.
+
+    The previous current version is archived (never deleted) and the document
+    switches to the new file; the new version must be processed via
+    ``POST /api/documents/{id}/process`` before retrieval uses it.
+    """
+    content = file.file.read()
+    pdf_service.check_mime_type(file.content_type)
+    safe_name = pdf_service.validate_upload(filename=file.filename, content=content)
+
+    document = document_service.get_manageable_document(db, document_id, current_user)
+    version_number = document_service.next_version_number(db, document.id)
+    stored_path = storage_service.save_document_version_file(
+        document.id, version_number, content
+    )
+
+    try:
+        version = document_service.create_version(
+            db,
+            document,
+            version_number=version_number,
+            filename=safe_name,
+            storage_path=stored_path,
+            file_size=len(content),
+            mime_type=file.content_type or "application/pdf",
+        )
+    except Exception:
+        logger.exception("Creating document version failed; removing stored file")
+        storage_service.delete_document_file(stored_path)
+        raise
+
+    return _version_response(version)
+
+
+@router.get(
+    "/{document_id}/versions/{version_id}",
+    response_model=DocumentVersionResponse,
+    summary="Get a document version",
+)
+def get_version(
+    document_id: uuid.UUID,
+    version_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DocumentVersionResponse:
+    document = document_service.get_visible_document(db, document_id, current_user)
+    version = document_service.get_version(db, document, version_id)
+    return _version_response(version)

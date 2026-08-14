@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, Text, Uuid
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, Text, Uuid, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -34,4 +34,7 @@ class Feedback(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     __table_args__ = (
         CheckConstraint("rating >= 1 AND rating <= 5", name="ck_feedback_rating_range"),
+        # One rating per assistant message per user; a second submission updates
+        # the existing entry (see feedback_service.submit_feedback).
+        UniqueConstraint("user_id", "message_id", name="uq_feedback_user_message"),
     )

@@ -9,7 +9,7 @@ rules, circulars, and more). Answers are grounded in the uploaded documents,
 are produced by a Retrieval-Augmented Generation (RAG) pipeline, and include
 structured citations pointing to the source document and page.
 
-> **Status: Phase 5 (Advanced Retrieval) complete.** This README documents both
+> **Status: Phase 6 (Product Features) complete.** This README documents both
 > the current implementation and the full planned system. Later phases build
 > incrementally on this foundation (see [Development roadmap](#development-roadmap)).
 
@@ -243,8 +243,57 @@ and later phases are laid out in the [roadmap](#development-roadmap).
   preservation, confidence thresholds, hybrid E2E, and permissive/restrictive
   permission paths.
 
-**Planned (later phases):** conversations, feedback, document versioning, admin
-dashboard, search page, and evaluation tooling.
+**Implemented (Phase 6):**
+
+- **Persistent conversations** (`app/services/conversation_service.py`):
+  `POST /api/chat` accepts an optional `conversation_id`; when omitted a new
+  conversation is created with a deterministic, LLM-free title (leading question
+  words stripped, truncated to 60 chars — e.g. *"What is the minimum attendance
+  requirement?"* → *"Minimum attendance requirement"*). The exchange (user
+  message → answer → citations) is persisted, and conversation history is never
+  fed back into the LLM — the Phase 5 pipeline is untouched.
+- **Conversation API**: `GET /api/conversations`, `GET /api/conversations/{id}`
+  (full thread with citations), `DELETE /api/conversations/{id}`. Ownership is
+  enforced server-side: users only ever see their own conversations, and a
+  non-owner gets a 404 (existence hidden).
+- **Message ordering** is deterministic: a `position` column (int, server
+  default `0`) orders messages within a conversation, since same-transaction
+  `now()` timestamps collide.
+- **Feedback** (`app/services/feedback_service.py`): `POST /api/feedback` rates
+  an assistant answer 1–5 with an optional reason. One entry per (user,
+  message) via a unique constraint — resubmission upserts. Only assistant
+  messages can be rated, and only the conversation owner can rate them.
+- **Document versioning** (`app/services/document_service.py`): every upload
+  creates a version-1 `DocumentVersion`. `GET/POST /api/documents/{id}/versions`
+  list and upload new versions (v1 lives at `documents/<id>/original.pdf`,
+  vN at `documents/<id>/versions/<n>/original.pdf`). Uploading a version
+  archives the previous current version and switches the document's file
+  pointers; the new version is `UPLOADED` until the existing
+  `POST /{id}/process` makes it `ACTIVE` (and replaces the old chunks). The
+  circular `document ↔ document_version` FK is resolved with a named
+  `use_alter=True` FK and explicit relationship join conditions.
+- **Citations gain provenance**: `Citation` now stores `document_id`,
+  `document_title` and `section`, and the chat response already carries these
+  alongside `relevance_score`.
+- **User-facing search** (`POST /api/search/results`): runs the Phase 5
+  retrieval and returns clean results (document title, page, snippet, relevance
+  percentage) with **no** raw scores, chunk ids or vector internals — those
+  remain on the developer endpoint `/api/search`.
+- **Admin API + dashboard** (`app/api/routes/admin.py`): `GET /api/admin/users`,
+  `GET /api/admin/documents`, `GET /api/admin/stats` (real DB counts), and
+  `PATCH /api/admin/users/{id}/role`. All require `ADMIN`; responses never
+  include password hashes or storage paths. The last remaining `ADMIN` cannot
+  be demoted (`LAST_ADMIN`). The new `/admin` frontend page surfaces stats,
+  user role management and a document overview.
+- **Frontend**: dashboard reworked into a conversation layout — sidebar with
+  conversation list/new/delete, threaded chat with per-answer 👍/👎 feedback,
+  and a per-document version history with "Upload new version". New `/search`
+  page (clean, permission-aware search UI). New `/admin` page (ADMIN only).
+- Backend test suite grown to **193 tests** (conversations, feedback,
+  versioning, admin, search added).
+
+**Planned (later phases):** evaluation tooling (retrieval metrics, RAG
+metrics) and polish.
 
 ---
 
@@ -287,7 +336,7 @@ Notable compatibility decisions:
 │   │   ├── main.py                 # FastAPI app factory, CORS, handlers, routers
 │   │   ├── api/
 │   │   │   ├── deps.py             # auth deps: get_current_user, require_role
-│   │   │   └── routes/             # health, auth, admin, documents, chat
+│   │   │   └── routes/             # health, auth, admin, documents, chat, conversations, feedback
 │   │   ├── core/
 │   │   │   ├── config.py           # centralized settings (pydantic-settings)
 │   │   │   ├── enums.py            # Role, DocumentStatus, AccessLevel, MessageRole
@@ -296,7 +345,7 @@ Notable compatibility decisions:
 │   │   │   └── security.py         # bcrypt hashing, JWT encode/decode
 │   │   ├── db/
 │   │   │   ├── database.py         # engine, session factory, Base, get_db
-│   │   │   └── models/             # ORM models (users, documents, chunks, ...)
+│   │   │   └── models/             # ORM models (users, documents, versions, chunks, ...)
 │   │   ├── rag/
 │   │   │   ├── chunking.py         # page-aware chunking (chunk_size/overlap)
 │   │   │   ├── confidence.py       # retrieval confidence gate (Phase 5)
@@ -308,8 +357,10 @@ Notable compatibility decisions:
 │   │       ├── bm25_service.py     # PostgreSQL FTS keyword retrieval (Phase 5)
 │   │       ├── citation_service.py # answer tags → structured citations
 │   │       ├── context_service.py  # labelled evidence → context block
-│   │       ├── document_service.py # CRUD, visibility, authorization
+│   │       ├── conversation_service.py # conversations, messages, citations persistence (Phase 6)
+│   │       ├── document_service.py # CRUD, visibility, authorization, versioning (Phase 6)
 │   │       ├── embedding_service.py# sentence-transformers/BGE, model reuse
+│   │       ├── feedback_service.py # answer ratings, upsert (Phase 6)
 │   │       ├── hybrid_retrieval_service.py # dense+BM25 fusion + rerank (Phase 5)
 │   │       ├── ingestion_service.py# upload→extract→chunk→embed→ACTIVE
 │   │       ├── llm_service.py      # LLM provider abstraction (gemini/local)
@@ -319,7 +370,7 @@ Notable compatibility decisions:
 │   │       ├── retrieval_service.py# pgvector cosine retrieval + permissions
 │   │       ├── retrieval_types.py  # shared RetrievalCandidate (Phase 5)
 │   │       └── storage_service.py  # local file storage (replaceable)
-│   ├── tests/                      # backend tests (auth, RBAC, docs, RAG; 137 passing)
+│   ├── tests/                      # backend tests (auth, RBAC, docs, RAG, product; 193 passing)
 │   ├── alembic/                    # migration env + versions/
 │   ├── alembic.ini
 │   ├── requirements.txt
@@ -327,7 +378,7 @@ Notable compatibility decisions:
 │   ├── Dockerfile
 │   └── .env.example
 ├── frontend/
-│   ├── app/                        # Next.js App Router pages (login, register, dashboard)
+│   ├── app/                        # Next.js App Router pages (login, register, dashboard, search, admin)
 │   ├── components/                 # ui primitives, RequireAuth guard
 │   ├── lib/                        # api client, auth context/helpers
 │   ├── package.json
@@ -533,12 +584,14 @@ pip install -r requirements-dev.txt     # pytest + httpx
 python -m pytest app/tests -q
 ```
 
-Current suite: **137 tests** covering authentication, RBAC, document
+Current suite: **193 tests** covering authentication, RBAC, document
 validation/upload, extraction, chunking, embeddings, processing status
 transitions, the full document API, and the Phase 4 RAG pipeline (retrieval
 ranking + permission filtering, context assembly, LLM provider, citations,
-chat/search API) plus Phase 5 retrieval (BM25 ranking and permissions, score
-normalization, hybrid fusion, reranker ordering/metadata, confidence gates).
+chat/search API), Phase 5 retrieval (BM25 ranking and permissions, score
+normalization, hybrid fusion, reranker ordering/metadata, confidence gates),
+and Phase 6 product features (conversations, feedback, versioning, admin,
+user-facing search).
 
 ---
 
@@ -560,13 +613,19 @@ backend. Endpoints planned across the project:
 | PATCH | `/api/documents/{id}` | Edit metadata *(implemented, Phase 3)* |
 | DELETE | `/api/documents/{id}` | Delete document *(implemented, Phase 3)* |
 | POST | `/api/documents/{id}/process` | Trigger ingestion *(implemented, Phase 3)* |
-| POST | `/api/chat` | Ask a grounded question (RAG) *(implemented, Phase 4/5)* |
+| POST | `/api/chat` | Ask a grounded question (RAG) *(implemented, Phase 4/5; conversation-aware, Phase 6)* |
 | POST | `/api/search` | Raw hybrid search, no LLM *(implemented, Phase 4/5)* |
-| GET  | `/api/conversations` | List conversations |
-| GET  | `/api/conversations/{id}` | Conversation detail |
-| DELETE | `/api/conversations/{id}` | Delete conversation |
-| POST | `/api/feedback` | Rate an answer |
-| ...  | `/api/admin/...` | Admin endpoints (protected) |
+| POST | `/api/search/results` | User-facing search, no raw internals *(implemented, Phase 6)* |
+| GET  | `/api/conversations` | List conversations *(implemented, Phase 6)* |
+| GET  | `/api/conversations/{id}` | Conversation detail *(implemented, Phase 6)* |
+| DELETE | `/api/conversations/{id}` | Delete conversation *(implemented, Phase 6)* |
+| POST | `/api/feedback` | Rate an answer *(implemented, Phase 6)* |
+| GET  | `/api/documents/{id}/versions` | List document versions *(implemented, Phase 6)* |
+| POST | `/api/documents/{id}/versions` | Upload a new version *(implemented, Phase 6)* |
+| GET  | `/api/admin/users` | List users (ADMIN) *(implemented, Phase 6)* |
+| GET  | `/api/admin/documents` | List documents (ADMIN) *(implemented, Phase 6)* |
+| GET  | `/api/admin/stats` | System statistics (ADMIN) *(implemented, Phase 6)* |
+| PATCH | `/api/admin/users/{id}/role` | Change a user's role (ADMIN) *(implemented, Phase 6)* |
 
 ### Authentication (Phase 2)
 
@@ -630,22 +689,28 @@ Document error codes: `DOCUMENT_NOT_FOUND`, `FORBIDDEN`,
 
 Both endpoints require authentication and are permission-aware server-side.
 
-- `POST /api/chat` — body `{"message": "<question>"}`. Runs the Phase 5 RAG
-  pipeline over the documents the user can see and returns `{answer,
-  citations}`. When no evidence meets the retrieval thresholds, evidence is
-  below `CONFIDENCE_THRESHOLD`, or the LLM fails, the answer is the fixed
-  grounded fallback: *"I couldn't find sufficient information in the available
-  university documents."* Citations resolve the model's source tags to actual
-  retrieved chunks; each citation includes `relevance_score` (the final
-  reranker score, 0..1). `section` is `null` when the document does not provide
-  one.
+- `POST /api/chat` — body `{"message": "<question>", "conversation_id": null | "<id>"}`.
+  Runs the Phase 5 RAG pipeline over the documents the user can see and returns
+  `{answer, citations, conversation_id, message_id}`. When no evidence meets the
+  retrieval thresholds, evidence is below `CONFIDENCE_THRESHOLD`, or the LLM
+  fails, the answer is the fixed grounded fallback: *"I couldn't find sufficient
+  information in the available university documents."* Citations resolve the
+  model's source tags to actual retrieved chunks; each citation includes
+  `relevance_score` (the final reranker score, 0..1) plus `document_id`,
+  `document_title` and `section` (`null` when the document does not provide
+  one). With `conversation_id` omitted, a new conversation is created and the
+  exchange is persisted (Phase 6).
 - `POST /api/search` — body `{"query": "..."}`. Developer/debug endpoint that
   returns raw hybrid retrieval results (`{results: [...]}`) without calling an
   LLM. Each result exposes the per-stage scores — `dense_score` (pgvector
   cosine similarity), `bm25_score` (min-max normalized `ts_rank_cd`),
   `hybrid_score` (weighted fusion of the two), and `rerank_score` (sigmoid of
   the cross-encoder logit). `score` is a legacy alias equal to `dense_score`.
-- Chat error codes: `MESSAGE_EMPTY`, `MESSAGE_TOO_LONG`.
+- `POST /api/search/results` — body `{"query": "..."}` (Phase 6). Same retrieval
+  as `/api/search` but returns clean, user-facing results (`document_title`,
+  `page_number`, `section`, `snippet`, `relevance_score`) with no raw scores or
+  chunk ids.
+- Chat error codes: `MESSAGE_EMPTY`, `MESSAGE_TOO_LONG`, `CONVERSATION_NOT_FOUND`.
 
 The LLM provider is selected by `LLM_PROVIDER`:
 `gemini` (default; requires `GEMINI_API_KEY`, model `LLM_MODEL`) or `local`
@@ -695,7 +760,7 @@ Failure handling degrades gracefully: a BM25 failure falls back to dense-only,
 a dense failure to BM25-only, and a reranker outage returns the hybrid-fused
 order.
 
-Planned (Phases 6–7): conversations, feedback, and evaluation tooling.
+Planned (Phase 7): evaluation tooling, and polish.
 
 Example citation payload returned by the API:
 
@@ -739,8 +804,8 @@ measured.
 | 3 | Document ingestion: PDF upload, extraction, page tracking, chunking, embeddings, pgvector storage | ✅ Done |
 | 4 | Basic RAG: semantic retrieval, context building, LLM integration, answers, citations | ✅ Done |
 | 5 | Advanced retrieval: BM25, hybrid ranking, cross-encoder reranking, confidence threshold | ✅ Done |
-| 6 | Product features: conversations, feedback, versioning, role-based access, admin, search | ⏳ Next |
-| 7 | Evaluation: dataset, retrieval metrics, RAG metrics, report | |
+| 6 | Product features: conversations, feedback, versioning, role-based access, admin, search | ✅ Done |
+| 7 | Evaluation: dataset, retrieval metrics, RAG metrics, report | ⏳ Next |
 | 8 | Polish: error handling, tests, loading/empty states, responsive UI, docs | |
 
 Each phase keeps the project runnable.

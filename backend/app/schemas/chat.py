@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.config import settings
@@ -9,6 +11,9 @@ from app.core.config import settings
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=settings.MAX_MESSAGE_LENGTH)
+    # When provided, the exchange is appended to the caller's conversation;
+    # otherwise a new conversation is created and returned in the response.
+    conversation_id: uuid.UUID | None = None
 
 
 class CitationResponse(BaseModel):
@@ -27,6 +32,10 @@ class CitationResponse(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     citations: list[CitationResponse]
+    # Conversation persistence (Phase 6): the conversation the exchange was
+    # stored in and the id of the persisted assistant message (for feedback).
+    conversation_id: uuid.UUID | None = None
+    message_id: uuid.UUID | None = None
 
 
 class SearchRequest(BaseModel):
@@ -57,3 +66,26 @@ class SearchResult(BaseModel):
 
 class SearchResponse(BaseModel):
     results: list[SearchResult]
+
+
+class UserSearchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=settings.MAX_MESSAGE_LENGTH)
+
+
+class UserSearchResult(BaseModel):
+    """User-facing search result: no raw scores, vector values or chunk ids.
+
+    ``relevance_score`` is the final reranker relevance (0..1) so the UI can
+    show a relative relevance indicator without exposing pipeline internals.
+    """
+
+    document_id: str
+    document_title: str
+    page_number: int | None
+    section: str | None
+    snippet: str
+    relevance_score: float | None = None
+
+
+class UserSearchResponse(BaseModel):
+    results: list[UserSearchResult]

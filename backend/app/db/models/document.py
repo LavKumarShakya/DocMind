@@ -49,8 +49,28 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     processing_error: Mapped[str | None] = mapped_column(Text)
+    # The version currently used by retrieval; historical versions remain on
+    # ``versions`` and are never deleted automatically. ``use_alter`` breaks
+    # the documents <-> document_versions FK cycle for create/drop_all.
+    current_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey(
+            "document_versions.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_documents_current_version_id_document_versions",
+        ),
+        nullable=True,
+        index=True,
+    )
 
     uploader: Mapped[User | None] = relationship(back_populates="documents")
     chunks: Mapped[list[DocumentChunk]] = relationship(
         back_populates="document", cascade="all, delete-orphan"
+    )
+    versions: Mapped[list[DocumentVersion]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+        primaryjoin="Document.id == DocumentVersion.document_id",
+        foreign_keys="[DocumentVersion.document_id]",
     )

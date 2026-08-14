@@ -45,3 +45,17 @@ class DocumentUpdate(BaseModel):
     version: str | None = Field(default=None, max_length=50)
     effective_date: date | None = None
     access_level: AccessLevel | None = None
+
+
+class DocumentVersionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    document_id: uuid.UUID
+    version_number: int
+    status: DocumentStatus
+    filename: str
+    file_size: int
+    page_count: int | None
+    created_at: datetime
+    processed_at: datetime | None

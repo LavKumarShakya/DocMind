@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import ForeignKey, Text, Uuid
+from sqlalchemy import ForeignKey, Index, Integer, Text, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import MessageRole
@@ -26,6 +26,12 @@ class Message(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         enum_type(MessageRole, "message_role"), nullable=False
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    # Deterministic per-conversation ordering. Messages created in the same
+    # transaction share the server ``now()`` timestamp, so position (never the
+    # random UUID id) is the source of truth for message order.
+    position: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
 
     conversation: Mapped[Conversation] = relationship(back_populates="messages")
     citations: Mapped[list[Citation]] = relationship(
@@ -33,4 +39,8 @@ class Message(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     feedback: Mapped[list[Feedback]] = relationship(
         back_populates="message", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_messages_conversation_id_created_at", "conversation_id", "created_at"),
     )

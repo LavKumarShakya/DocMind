@@ -32,6 +32,19 @@ export interface CampusDocument {
   created_at: string;
   updated_at: string;
   processed_at: string | null;
+  current_version_id: string | null;
+}
+
+export interface DocumentVersion {
+  id: string;
+  document_id: string;
+  version_number: number;
+  status: DocumentStatus;
+  filename: string;
+  file_size: number;
+  page_count: number | null;
+  created_at: string;
+  processed_at: string | null;
 }
 
 export function uploadDocument(formData: FormData): Promise<CampusDocument> {
@@ -48,6 +61,16 @@ export function getDocument(id: string): Promise<CampusDocument> {
 
 export function processDocument(id: string): Promise<CampusDocument> {
   return apiPost<CampusDocument>(`/api/documents/${id}/process`);
+}
+
+export function listVersions(id: string): Promise<DocumentVersion[]> {
+  return apiGet<DocumentVersion[]>(`/api/documents/${id}/versions`);
+}
+
+export function uploadVersion(id: string, file: File): Promise<DocumentVersion> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiUpload<DocumentVersion>(`/api/documents/${id}/versions`, formData);
 }
 
 export function deleteDocument(id: string): Promise<{ status: string }> {

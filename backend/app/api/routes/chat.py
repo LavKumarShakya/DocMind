@@ -1,4 +1,9 @@
-"""Chat and semantic-search endpoints (Phase 4 RAG + Phase 5 hybrid retrieval)."""
+"""Chat, search and user-facing search endpoints.
+
+The chat endpoint runs the Phase 5 RAG pipeline unchanged and, on top of it,
+persists the exchange (user message → answer → citations) in a conversation
+(Phase 6). The RAG service itself is never modified by persistence logic.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +13,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.enums import MessageRole
 from app.db.database import get_db
 from app.db.models import User
 from app.schemas.chat import (
@@ -17,12 +23,19 @@ from app.schemas.chat import (
     SearchRequest,
     SearchResponse,
     SearchResult,
+    UserSearchRequest,
+    UserSearchResponse,
+    UserSearchResult,
 )
-from app.services import rag_service
+from app.services import conversation_service, rag_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["rag"])
+
+
+def _citations(result) -> list[CitationResponse]:
+    return [CitationResponse(**citation.__dict__) for citation in result.citations]
 
 
 @router.post(
@@ -37,18 +50,41 @@ def chat(
 ) -> ChatResponse:
     """Run the RAG pipeline and return a grounded answer with citations.
 
-    Answers are restricted to documents visible to ``current_user``. When no
-    sufficient evidence is found (empty retrieval or evidence below the
-    confidence threshold), a fixed fallback answer is returned.
+    The exchange is persisted in a conversation: a new one is created (with a
+    deterministic title from the question) when ``conversation_id`` is omitted,
+    otherwise the exchange is appended to the caller's conversation.
     """
+    if payload.conversation_id is None:
+        conversation = conversation_service.create_conversation(
+            db,
+            user=current_user,
+            title=conversation_service.generate_title(payload.message),
+        )
+    else:
+        conversation = conversation_service.get_owned_conversation(
+            db, conversation_id=payload.conversation_id, user=current_user
+        )
+
+    conversation_service.add_message(
+        db, conversation=conversation, role=MessageRole.USER, content=payload.message
+    )
+
     result = rag_service.answer_question(
         db, question=payload.message, user=current_user
     )
+
+    assistant = conversation_service.add_message(
+        db, conversation=conversation, role=MessageRole.ASSISTANT, content=result.answer
+    )
+    conversation_service.persist_citations(
+        db, message=assistant, citations=result.citations
+    )
+
     return ChatResponse(
         answer=result.answer,
-        citations=[
-            CitationResponse(**citation.__dict__) for citation in result.citations
-        ],
+        citations=_citations(result),
+        conversation_id=conversation.id,
+        message_id=assistant.id,
     )
 
 
@@ -87,3 +123,35 @@ def search(
     """
     results = rag_service.search_documents(db, query=payload.query, user=current_user)
     return SearchResponse(results=[_search_result(r) for r in results])
+
+
+@router.post(
+    "/search/results",
+    response_model=UserSearchResponse,
+    summary="User-facing search (no LLM, no raw pipeline internals)",
+)
+def user_search(
+    payload: UserSearchRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserSearchResponse:
+    """Run Phase 5 retrieval and return clean, user-facing results.
+
+    Results carry document title, page, a text snippet and a relevance
+    indicator only — raw scores, vector values and chunk ids are never exposed
+    here (they remain available on the developer endpoint above).
+    """
+    results = rag_service.search_documents(db, query=payload.query, user=current_user)
+    return UserSearchResponse(
+        results=[
+            UserSearchResult(
+                document_id=str(r.document_id),
+                document_title=r.document_title,
+                page_number=r.page_number,
+                section=r.section,
+                snippet=r.text,
+                relevance_score=r.rerank_score,
+            )
+            for r in results
+        ]
+    )

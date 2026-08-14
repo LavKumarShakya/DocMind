@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.enums import DocumentStatus
 from app.core.errors import ApiError
-from app.db.models import Document, DocumentChunk, User
+from app.db.models import Document, DocumentChunk, DocumentVersion, User
 from app.rag.chunking import Chunk, chunk_pages
 from app.services import pdf_service, storage_service
 from app.services.document_service import get_manageable_document
@@ -46,6 +46,12 @@ def _mark_failed(db: Session, document: Document, reason: str) -> None:
     document.status = DocumentStatus.FAILED
     document.processing_error = reason[:2000]
     try:
+        if document.current_version_id is not None:
+            version = db.get(DocumentVersion, document.current_version_id)
+            if version is not None:
+                version.status = DocumentStatus.FAILED
+                version.processing_error = reason[:2000]
+                db.add(version)
         db.add(document)
         db.commit()
     except Exception:  # pragma: no cover - DB write failure during failure path
@@ -93,6 +99,15 @@ def _persist_chunks(
     document.page_count = page_count
     document.processed_at = now
     document.processing_error = None
+    # The current version shares the document's processing outcome.
+    if document.current_version_id is not None:
+        version = db.get(DocumentVersion, document.current_version_id)
+        if version is not None:
+            version.status = DocumentStatus.ACTIVE
+            version.page_count = page_count
+            version.processed_at = now
+            version.processing_error = None
+            db.add(version)
     db.add(document)
     db.commit()
 

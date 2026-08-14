@@ -61,6 +61,27 @@ def save_document_file(document_id: uuid.UUID, content: bytes) -> str:
     return relative.as_posix()
 
 
+def save_document_version_file(
+    document_id: uuid.UUID, version_number: int, content: bytes
+) -> str:
+    """Persist a new version's file under ``documents/<id>/versions/<n>/original.pdf``.
+
+    Version files live in their own subdirectory so uploading a new version
+    never overwrites a historical version's bytes.
+    """
+    relative = (
+        Path(_DOCUMENTS_SUBDIR)
+        / str(document_id)
+        / "versions"
+        / str(version_number)
+        / _STORED_FILENAME
+    )
+    path = get_storage_root() / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(content)
+    return relative.as_posix()
+
+
 def read_document_file(relative_path: str) -> bytes:
     """Read the stored bytes for a document."""
     path = _safe_resolve(relative_path)
@@ -88,3 +109,16 @@ def delete_document_file(relative_path: str) -> None:
         # by the caller in the same operation. Failures here must never
         # cascade into an API error.
         pass
+
+
+def delete_document_files(relative_paths: list[str]) -> None:
+    """Remove multiple stored files (current file + every version file).
+
+    Cleanup is best-effort: leftover bytes must never fail a request that has
+    already committed the database state.
+    """
+    for relative_path in relative_paths:
+        try:
+            delete_document_file(relative_path)
+        except Exception:  # pragma: no cover - defensive cleanup
+            pass
