@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Database, Loader2, Server, TriangleAlert } from "lucide-react";
 
+import { DemoChat } from "@/components/demo-chat";
 import { Button } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { getDemoInfo, type DemoInfo } from "@/lib/demo";
 import { cn } from "@/lib/utils";
 
 type Health = {
@@ -113,6 +115,23 @@ function HealthCard() {
 
 export default function Home() {
   const { user, status } = useAuth();
+  const [demo, setDemo] = useState<DemoInfo | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getDemoInfo()
+      .then((info) => {
+        if (!cancelled) setDemo(info);
+      })
+      .catch(() => {
+        // Demo endpoints return 404 when DEMO_MODE is off (and a network error
+        // when the backend is unreachable): keep the standard landing page.
+        if (!cancelled) setDemo(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col bg-[var(--canvas)] text-[var(--ink)]">
@@ -157,43 +176,47 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* Hero */}
-      <section className="flex flex-1 items-center justify-center px-6 py-16 animate-page-in">
-        <div className="w-full max-w-lg space-y-8 text-center">
-          {/* Decorative accent bar */}
-          <div className="mx-auto h-1 w-12 rounded-full bg-[var(--accent)]" />
+      {demo?.demo_mode ? (
+        <DemoChat info={demo} />
+      ) : (
+        /* Hero */
+        <section className="flex flex-1 items-center justify-center px-6 py-16 animate-page-in">
+          <div className="w-full max-w-lg space-y-8 text-center">
+            {/* Decorative accent bar */}
+            <div className="mx-auto h-1 w-12 rounded-full bg-[var(--accent)]" />
 
-          <h1
-            className="text-5xl tracking-tight text-[var(--ink)] sm:text-6xl"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            DocMind
-          </h1>
+            <h1
+              className="text-5xl tracking-tight text-[var(--ink)] sm:text-6xl"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              DocMind
+            </h1>
 
-          <p className="mx-auto max-w-sm text-lg text-[var(--ink-muted)] leading-relaxed">
-            University knowledge retrieval and question&#8209;answering
-            platform, grounded in your documents.
-          </p>
+            <p className="mx-auto max-w-sm text-lg text-[var(--ink-muted)] leading-relaxed">
+              University knowledge retrieval and question&#8209;answering
+              platform, grounded in your documents.
+            </p>
 
-          <HealthCard />
+            <HealthCard />
 
-          {/* CTA for unauthenticated */}
-          {status === "unauthenticated" && (
-            <div className="flex justify-center gap-3 pt-2">
-              <Link href="/register">
-                <Button variant="accent" size="lg">
-                  Get Started
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="outline" size="lg">
-                  Sign in
-                </Button>
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
+            {/* CTA for unauthenticated */}
+            {status === "unauthenticated" && (
+              <div className="flex justify-center gap-3 pt-2">
+                <Link href="/register">
+                  <Button variant="accent" size="lg">
+                    Get Started
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button variant="outline" size="lg">
+                    Sign in
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

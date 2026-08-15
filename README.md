@@ -9,10 +9,11 @@ rules, circulars, and more). Answers are grounded in the uploaded documents,
 are produced by a Retrieval-Augmented Generation (RAG) pipeline, and include
 structured citations pointing to the source document and page.
 
-> **Status: Phase 8 (Polish, Hardening & Release Preparation) complete.** All
-> eight planned phases are implemented and regression-tested. This README
-> documents the full system, its measured evaluation results, and the remaining
-> known limitations (see [Development roadmap](#development-roadmap),
+> **Status: Phase 9 (Public demo mode) complete.** All eight planned phases are
+> implemented and regression-tested, plus a public demo mode that showcases the
+> system on a single pre-indexed PDF without uploads. This README documents the
+> full system, its measured evaluation results, and the remaining known
+> limitations (see [Development roadmap](#development-roadmap),
 > [Evaluation methodology](#evaluation-methodology) and
 > [Known limitations](#known-limitations)).
 
@@ -330,6 +331,26 @@ gate). Results live in `backend/evaluation/results/` (`baseline.json`,
 - Backend test suite remains at **241 tests** covering every phase from
   foundation through evaluation.
 
+**Phase 9 (done): public demo mode.**
+
+- **Pre-indexed demo document** — `Doc/DocMind_Public_Demo_Test_Document.pdf`
+  is processed once by `backend/scripts/build_demo_index.py` (read → extract →
+  chunk → embed → store in the existing pgvector store). The script is
+  idempotent; the runtime never re-reads, re-chunks or re-embeds the PDF.
+- **Demo API** — unauthenticated `GET /api/demo/info` (mode + readiness +
+  title/chunk count) and `POST /api/demo/chat` (grounded answer + citations,
+  scoped to the demo document). `DEMO_MODE` gates the routes; upload/process/
+  version return `403 DEMO_MODE` while enabled. A missing index returns a
+  clear `503 DEMO_INDEX_MISSING` instead of a silent empty store.
+- **Demo UI** — the landing page detects demo mode at runtime and renders a
+  chat with a "Demo Document" card, "Try asking" example chips, grounded
+  answers with Sources, and a "Retrieving relevant sections…" loading state.
+- **RAM discipline** — demo chat runs query embedding + hybrid retrieval over
+  already-stored chunks only; no PDF bytes or per-request vectors.
+- Backend test suite grown to **252 tests** (`app/tests/test_demo.py` adds
+  mode gating, index build/idempotency, scoped chat wiring, LLM-failure
+  fallback, and upload blocking).
+
 ---
 
 ## Tech stack
@@ -371,7 +392,7 @@ Notable compatibility decisions:
 │   │   ├── main.py                 # FastAPI app factory, CORS, handlers, routers
 │   │   ├── api/
 │   │   │   ├── deps.py             # auth deps: get_current_user, require_role
-│   │   │   └── routes/             # health, auth, admin, documents, chat, conversations, feedback
+│   │   │   └── routes/             # health, auth, admin, documents, chat, conversations, feedback, demo (Phase 9)
 │   │   ├── core/
 │   │   │   ├── config.py           # centralized settings (pydantic-settings)
 │   │   │   ├── enums.py            # Role, DocumentStatus, AccessLevel, MessageRole
@@ -384,15 +405,16 @@ Notable compatibility decisions:
 │   │   ├── rag/
 │   │   │   ├── chunking.py         # page-aware chunking (chunk_size/overlap)
 │   │   │   ├── confidence.py       # retrieval confidence gate (Phase 5)
-│   │   │   ├── prompts.py          # grounded system prompt + fallback
+│   │   │   ├── prompts.py          # grounded system prompt + fallback (+ demo variant)
 │   │   │   └── score_normalization.py # min-max score normalization (Phase 5)
-│   │   ├── schemas/                # Pydantic request/response schemas
+│   │   ├── schemas/                # Pydantic request/response schemas (incl. demo)
 │   │   └── services/
 │   │       ├── auth_service.py     # register_user, authenticate_user
 │   │       ├── bm25_service.py     # PostgreSQL FTS keyword retrieval (Phase 5)
 │   │       ├── citation_service.py # answer tags → structured citations
 │   │       ├── context_service.py  # labelled evidence → context block
 │   │       ├── conversation_service.py # conversations, messages, citations persistence (Phase 6)
+│   │       ├── demo_service.py     # public demo index build + scoped demo chat (Phase 9)
 │   │       ├── document_service.py # CRUD, visibility, authorization, versioning (Phase 6)
 │   │       ├── embedding_service.py# sentence-transformers/BGE, model reuse
 │   │       ├── feedback_service.py # answer ratings, upsert (Phase 6)
@@ -405,7 +427,9 @@ Notable compatibility decisions:
 │   │       ├── retrieval_service.py# pgvector cosine retrieval + permissions
 │   │       ├── retrieval_types.py  # shared RetrievalCandidate (Phase 5)
 │   │       └── storage_service.py  # local file storage (replaceable)
-│   ├── tests/                      # backend tests (auth, RBAC, docs, RAG, product, evaluation; 241 passing)
+│   ├── scripts/
+│   │   └── build_demo_index.py     # one-time, idempotent demo index build (Phase 9)
+│   ├── tests/                      # backend tests (auth, RBAC, docs, RAG, product, evaluation, demo; 252 passing)
 │   ├── evaluation/                 # Phase 7 harness: dataset.json, corpus/, metrics, modes, runner, results/
 │   ├── alembic/                    # migration env + versions/
 │   ├── alembic.ini
@@ -415,13 +439,15 @@ Notable compatibility decisions:
 │   └── .env.example
 ├── frontend/
 │   ├── app/                        # Next.js App Router pages (login, register, dashboard, search, admin)
-│   ├── components/                 # ui primitives, RequireAuth guard, shared SiteHeader (mobile nav)
-│   ├── lib/                        # api client, auth context/helpers
+│   ├── components/                 # ui primitives, RequireAuth guard, shared SiteHeader, DemoChat (Phase 9)
+│   ├── lib/                        # api client, auth context/helpers, demo client
 │   ├── package.json
 │   ├── tsconfig.json
 │   ├── next.config.ts
 │   ├── Dockerfile
 │   └── .env.example
+├── Doc/
+│   └── DocMind_Public_Demo_Test_Document.pdf   # demo PDF indexed by scripts/build_demo_index.py
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
@@ -502,7 +528,112 @@ Gemini-backed chat endpoint, set `GEMINI_API_KEY` in the root `.env` (read by
 | `RERANKER_MODEL` | Cross-encoder model (default `cross-encoder/ms-marco-MiniLM-L-6-v2`). |
 | `RERANKER_BATCH_SIZE` | Cross-encoder inference batch size (default 8). |
 | `CONFIDENCE_THRESHOLD` | Minimum top reranker relevance (0..1) before answering (default 0.35). |
+| `DEMO_MODE` | `true` exposes the unauthenticated public demo (pre-indexed PDF, no upload); `false` keeps the local/self-hosted upload workflow (default). |
+| `DEMO_DOCUMENT_PATH` | Path to the demo PDF. Absolute paths are used as-is; relative paths resolve against the backend working directory, walking up to the repo root (default `../Doc/DocMind_Public_Demo_Test_Document.pdf`). |
+| `DEMO_DOCUMENT_ID` | Fixed row id of the demo document (default `11111111-1111-4111-8111-111111111111`). Do not change after building the index. |
+| `DEMO_DOCUMENT_TITLE` | Display title of the demo document (default `DocMind Public Demo Test Document`). |
 | `NEXT_PUBLIC_API_URL` | Backend base URL baked into the frontend build (public, not a secret). |
+
+---
+
+## Public demo mode
+
+Phase 9 adds a **public demo mode** so a deployed DocMind can be showcased
+without asking visitors to upload a PDF, parse it, or wait for indexing. When
+`DEMO_MODE=true`, the landing page becomes an unauthenticated chat UI anchored
+to a single **pre-indexed** demo document (`Doc/DocMind_Public_Demo_Test_Document.pdf`)
+with predefined example questions. The PDF is processed **once** at build time;
+every visitor question only runs query embedding + hybrid retrieval over the
+already-stored chunks (pgvector), so a public instance stays cheap on RAM and
+never re-reads, re-chunks or re-embeds the PDF per request.
+
+```
+Public demo                        Local / self-hosted
+DEMO_MODE=true                     DEMO_MODE=false
+        │                                  │
+        ▼                                  ▼
+Pre-indexed demo document            User uploads own PDF
+        │                                  │
+        ▼                                  ▼
+User asks question ──► Retriever    PDF processing ──► RAG
+        │                                  │
+        ▼                                  ▼
+Relevant chunks ──► LLM ──►        Chat / search (auth required)
+Answer + sources
+```
+
+### How it works
+
+- **Index once.** `python -m scripts.build_demo_index` (run from `backend/`)
+  reads `DEMO_DOCUMENT_PATH`, extracts text, chunks with the project's existing
+  chunking settings, embeds with `EMBEDDING_MODEL`, and stores the vectors in
+  the **same persistent pgvector store** used by normal ingestion — no new
+  vector database. Re-running is idempotent (existing demo chunks are replaced,
+  never duplicated); use `--force` to rebuild from the current PDF.
+- **Runtime reuses the index.** On startup, demo mode only *checks* readiness
+  (logged); the demo chat endpoint never calls the build path. If the index is
+  missing, `GET /api/demo/info` reports `status: "missing"` and
+  `POST /api/demo/chat` returns a clear `503 DEMO_INDEX_MISSING` error instead
+  of silently falling back to an empty store.
+- **Upload is disabled while demo mode is on.** `POST /api/documents` (upload,
+  process, version) returns `403 DEMO_MODE` so visitors cannot trigger arbitrary
+  PDF processing. Set `DEMO_MODE=false` to restore the upload workflow.
+- **Grounded answers only.** Demo chat reuses the exact Phase 5 RAG pipeline
+  (hybrid retrieval → fusion → rerank → confidence gate → context → LLM →
+  citations) scoped to the demo document id. The demo system prompt refuses
+  out-of-scope questions with *"I couldn't find that information in the demo
+  document. Try asking a question about the evaluation, metrics, or findings."*
+  — general knowledge is never used for document questions. Provider/LLM
+  failures also degrade to this grounded refusal rather than a 500.
+- **Frontend.** The landing page calls `GET /api/demo/info` at runtime. When
+  demo mode is active it renders the demo chat (document card, message history
+  with Sources, a "Try asking" chip row, and the chat input); otherwise the
+  standard landing page is shown unchanged. No frontend build flag is required.
+
+### Enable the demo
+
+```bash
+# 1. Build the pre-indexed demo document (from backend/)
+cd backend
+python -m scripts.build_demo_index          # adds --force to rebuild
+
+# 2. Run the API in demo mode
+set DEMO_MODE=true                          # PowerShell; export DEMO_MODE=true on bash
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# 3. (optional) a model that is currently available; see note below
+set LLM_MODEL=gemini-2.5-flash
+```
+
+With Docker Compose the demo PDF is mounted into the backend container at
+`/Doc` (read-only), so the default `DEMO_DOCUMENT_PATH=../Doc/…` resolves
+inside the container:
+
+```bash
+docker compose exec backend python -m scripts.build_demo_index
+# then set DEMO_MODE=true in your environment / root .env and restart the stack.
+```
+
+> **Model note.** The default `LLM_MODEL=gemini-flash-latest` can be unavailable
+> during Google free-tier capacity spikes (HTTP 503 "high demand"); the demo
+> then returns the grounded refusal, never a wrong answer. If that happens, set
+> `LLM_MODEL` to a currently-available model (e.g. `gemini-2.5-flash`) in the
+> environment before building/running the demo.
+
+### Public deployment (Render + Vercel)
+
+The demo runs on the same Render + Vercel setup described in
+[Deployment](#deployment), with two extra steps:
+
+1. Make the demo PDF reachable by the backend process — upload it to the
+   persistent disk (e.g. `/data/demo/DocMind_Public_Demo_Test_Document.pdf`)
+   and set `DEMO_DOCUMENT_PATH` to that path (absolute paths are used as-is),
+   or bake the PDF into the image.
+2. Set `DEMO_MODE=true`, `DEMO_DOCUMENT_ID`,
+   `DEMO_DOCUMENT_TITLE`, and a working `LLM_MODEL` (see the note above).
+
+The demo frontend is still the static Next.js build on Vercel; it needs no
+extra environment variables (demo detection is a runtime API call).
 
 ---
 
@@ -620,7 +751,7 @@ pip install -r requirements-dev.txt     # pytest + httpx
 python -m pytest app/tests -q
 ```
 
-Current suite: **241 tests** covering authentication, RBAC, document
+Current suite: **252 tests** covering authentication, RBAC, document
 validation/upload, extraction, chunking, embeddings, processing status
 transitions, the full document API, the Phase 4 RAG pipeline (retrieval
 ranking + permission filtering, context assembly, LLM provider, citations,
@@ -663,6 +794,8 @@ backend. Endpoints planned across the project:
 | GET  | `/api/admin/documents` | List documents (ADMIN) *(implemented, Phase 6)* |
 | GET  | `/api/admin/stats` | System statistics (ADMIN) *(implemented, Phase 6)* |
 | PATCH | `/api/admin/users/{id}/role` | Change a user's role (ADMIN) *(implemented, Phase 6)* |
+| GET  | `/api/demo/info` | Public demo metadata + index readiness *(implemented, Phase 9; demo mode only)* |
+| POST | `/api/demo/chat` | Grounded demo chat scoped to the pre-indexed PDF *(implemented, Phase 9; demo mode only)* |
 
 ### Authentication (Phase 2)
 
@@ -932,6 +1065,7 @@ improve any number.
 | 6 | Product features: conversations, feedback, versioning, role-based access, admin, search | ✅ Done |
 | 7 | Evaluation: dataset, retrieval metrics, RAG metrics, report | ✅ Done |
 | 8 | Polish: error handling, tests, loading/empty states, responsive UI, docs | ✅ Done |
+| 9 | Public demo mode: pre-indexed PDF, demo chat UI, example questions, RAM-light runtime | ✅ Done |
 
 Each phase keeps the project runnable.
 
@@ -1130,6 +1264,24 @@ A 5-minute walkthrough against `docker compose up`:
     and role management; a non-admin is blocked server-side.
 12. **Versioning** — on a document, "Versions" → "Upload new version" adds a
     v2 entry; reprocess to make it active.
+
+**Public demo walkthrough** (with `DEMO_MODE=true`):
+
+1. **Landing page** — `http://localhost:3000` renders the demo chat (no upload,
+   no account): a "Demo Document / DocMind Public Demo Test Document" card with
+   a "Public demo" badge.
+2. **Example questions** — click any "Try asking" chip; it is sent automatically
+   and appears as your own chat message.
+3. **Grounded answers** — e.g. *"What were the retrieval recall and answer
+   accuracy of Hybrid + Reranking?"* → 91% recall / 87% accuracy with a
+   "Sources (n)" list pointing at the demo document.
+4. **Refusal** — *"What is the capital of France?"* → *"I couldn't find that
+   information in the demo document…"* (no hallucination from general
+   knowledge).
+5. **Loading state** — while the LLM answers, the thread shows
+   *"Retrieving relevant sections…"*.
+6. **Missing index** — if the index was never built, `/api/demo/info` reports
+   `missing` and the page shows the build-script instruction.
 
 ---
 

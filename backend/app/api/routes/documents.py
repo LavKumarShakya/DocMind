@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.config import settings
+from app.core.errors import ApiError
 from app.db.database import get_db
 from app.db.models import Document, DocumentVersion, User
 from app.schemas.document import (
@@ -22,6 +24,17 @@ from app.services import document_service, ingestion_service, pdf_service, stora
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+
+
+def _ensure_upload_enabled() -> None:
+    """Block arbitrary PDF ingestion while the public demo is live."""
+    if settings.DEMO_MODE:
+        raise ApiError(
+            "DEMO_MODE",
+            "PDF upload and processing are disabled in demo mode. "
+            "Use DEMO_MODE=false for the self-hosted workflow.",
+            status_code=403,
+        )
 
 
 def _to_response(db: Session, document: Document, with_chunk_count: bool = False) -> DocumentResponse:
@@ -49,6 +62,7 @@ def upload_document(
     db: Session = Depends(get_db),
 ) -> DocumentResponse:
     """Validate and store an uploaded PDF, creating an UPLOADED record."""
+    _ensure_upload_enabled()
     content = file.file.read()
     pdf_service.check_mime_type(file.content_type)
     safe_name = pdf_service.validate_upload(filename=file.filename, content=content)
@@ -133,6 +147,7 @@ def process_document(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> DocumentResponse:
+    _ensure_upload_enabled()
     processed = ingestion_service.process_document(db, document_id, current_user)
     return _to_response(db, processed, with_chunk_count=True)
 
@@ -190,6 +205,7 @@ def upload_version(
     switches to the new file; the new version must be processed via
     ``POST /api/documents/{id}/process`` before retrieval uses it.
     """
+    _ensure_upload_enabled()
     content = file.file.read()
     pdf_service.check_mime_type(file.content_type)
     safe_name = pdf_service.validate_upload(filename=file.filename, content=content)

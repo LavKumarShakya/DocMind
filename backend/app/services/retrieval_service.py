@@ -61,6 +61,7 @@ class RetrievalService:
         user: User,
         top_k: int | None = None,
         min_similarity: float | None = None,
+        document_ids: list[uuid.UUID] | None = None,
     ) -> list[RetrievedChunk]:
         top_k = top_k or settings.RETRIEVAL_TOP_K
         min_similarity = settings.RETRIEVAL_MIN_SIMILARITY if min_similarity is None else min_similarity
@@ -80,6 +81,9 @@ class RetrievalService:
             .where(
                 Document.status == DocumentStatus.ACTIVE,
                 visibility,
+                DocumentChunk.document_id.in_(document_ids)
+                if document_ids
+                else True,
                 distance <= max_distance,
                 DocumentChunk.embedding.isnot(None),
             )

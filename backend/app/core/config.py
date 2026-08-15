@@ -98,6 +98,22 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "gemini-flash-latest"
     GEMINI_API_KEY: str = ""
 
+    # --- Public demo mode (Phase 9) ---
+    # When enabled, the app exposes an unauthenticated public demo that answers
+    # questions only from a single pre-indexed PDF. The demo index is built once
+    # by ``python -m scripts.build_demo_index`` (see README); PDF upload and
+    # processing are disabled while DEMO_MODE is on. When disabled, the existing
+    # local / self-hosted upload-driven workflow is unchanged.
+    DEMO_MODE: bool = False
+    # Fixed, deterministic id of the demo document so the build script, runtime
+    # readiness checks and retrieval scoping always refer to the same row.
+    DEMO_DOCUMENT_ID: str = "11111111-1111-4111-8111-111111111111"
+    # Path to the demo PDF. Absolute paths are used as-is; relative paths are
+    # resolved against the backend working directory, walking up to the repo
+    # root (so both ``backend/`` and the Docker container work directory find it).
+    DEMO_DOCUMENT_PATH: str = "../Doc/DocMind_Public_Demo_Test_Document.pdf"
+    DEMO_DOCUMENT_TITLE: str = "DocMind Public Demo Test Document"
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:

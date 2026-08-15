@@ -14,6 +14,7 @@ retrieves-then-filters on the Python side.
 from __future__ import annotations
 
 import logging
+import uuid
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -37,6 +38,7 @@ class Bm25Service:
         query: str,
         user: User,
         top_k: int | None = None,
+        document_ids: list[uuid.UUID] | None = None,
     ) -> list[RetrievalCandidate]:
         """Return the top ``top_k`` keyword matches visible to ``user``."""
         top_k = top_k or settings.BM25_CANDIDATE_K
@@ -59,6 +61,9 @@ class Bm25Service:
             .where(
                 Document.status == DocumentStatus.ACTIVE,
                 visibility,
+                DocumentChunk.document_id.in_(document_ids)
+                if document_ids
+                else True,
                 match,
                 DocumentChunk.searchable_content.isnot(None),
             )

@@ -44,16 +44,30 @@ class HybridRetrievalService:
         self._rerank = reranking_service
 
     def _dense_results(
-        self, db: Session, *, query: str, user: User
+        self,
+        db: Session,
+        *,
+        query: str,
+        user: User,
+        document_ids: list | None = None,
     ) -> list[RetrievalCandidate]:
         try:
             query_embedding = self._dense.embed_query(query)
-            chunks = self._dense.retrieve(
-                db,
-                query_embedding=query_embedding,
-                user=user,
-                top_k=settings.DENSE_CANDIDATE_K,
-            )
+            if document_ids:
+                chunks = self._dense.retrieve(
+                    db,
+                    query_embedding=query_embedding,
+                    user=user,
+                    top_k=settings.DENSE_CANDIDATE_K,
+                    document_ids=document_ids,
+                )
+            else:
+                chunks = self._dense.retrieve(
+                    db,
+                    query_embedding=query_embedding,
+                    user=user,
+                    top_k=settings.DENSE_CANDIDATE_K,
+                )
         except Exception as exc:  # pragma: no cover - defensive degradation
             logger.warning("Dense retrieval failed, using BM25 only: %s", exc)
             return []
@@ -72,9 +86,22 @@ class HybridRetrievalService:
         ]
 
     def _bm25_results(
-        self, db: Session, *, query: str, user: User
+        self,
+        db: Session,
+        *,
+        query: str,
+        user: User,
+        document_ids: list | None = None,
     ) -> list[RetrievalCandidate]:
         try:
+            if document_ids:
+                return self._bm25.search(
+                    db,
+                    query=query,
+                    user=user,
+                    top_k=settings.BM25_CANDIDATE_K,
+                    document_ids=document_ids,
+                )
             return self._bm25.search(
                 db, query=query, user=user, top_k=settings.BM25_CANDIDATE_K
             )
@@ -148,11 +175,24 @@ class HybridRetrievalService:
         return fused
 
     def retrieve(
-        self, db: Session, *, query: str, user: User
+        self,
+        db: Session,
+        *,
+        query: str,
+        user: User,
+        document_ids: list | None = None,
     ) -> list[RetrievalCandidate]:
-        """Run the full hybrid pipeline and return reranked candidates."""
-        dense = self._dense_results(db, query=query, user=user)
-        bm25 = self._bm25_results(db, query=query, user=user)
+        """Run the full hybrid pipeline and return reranked candidates.
+
+        ``document_ids`` optionally restricts retrieval to specific documents
+        (used by demo mode); permission filtering always still applies.
+        """
+        dense = self._dense_results(
+            db, query=query, user=user, document_ids=document_ids
+        )
+        bm25 = self._bm25_results(
+            db, query=query, user=user, document_ids=document_ids
+        )
         pool = self._fuse(dense + bm25)
         if not pool:
             return []

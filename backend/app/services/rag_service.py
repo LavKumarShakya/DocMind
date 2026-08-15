@@ -55,8 +55,17 @@ def answer_question(
     user: User,
     retrieval_service=None,
     llm_provider=None,
+    document_ids: list | None = None,
+    system_prompt_builder=None,
+    fallback_answer: str | None = None,
 ) -> RagResult:
-    """Answer ``question`` for ``user`` from their visible documents."""
+    """Answer ``question`` for ``user`` from their visible documents.
+
+    ``document_ids`` optionally restricts retrieval to specific documents
+    (demo mode); ``system_prompt_builder`` and ``fallback_answer`` let demo
+    mode reuse this exact pipeline with demo-flavoured grounding. Defaults
+    preserve the original behaviour exactly.
+    """
     if len(question) > settings.MAX_MESSAGE_LENGTH:
         raise ApiError(
             "MESSAGE_TOO_LONG",
@@ -66,33 +75,54 @@ def answer_question(
     if not question.strip():
         raise ApiError("MESSAGE_EMPTY", "Message must not be empty.", status_code=422)
 
-    results = _retrieve(db, question, user, retrieval_service)
+    fallback = fallback_answer or FALLBACK_ANSWER
+    prompt_builder = system_prompt_builder or build_system_prompt
+
+    if document_ids:
+        results = _retrieve(
+            db, question, user, retrieval_service, document_ids=document_ids
+        )
+    else:
+        results = _retrieve(db, question, user, retrieval_service)
 
     if not results or not is_confident(results):
         reason = "no evidence" if not results else "evidence below confidence threshold"
         logger.info("Not answering question (%s); returning grounded fallback", reason)
-        return RagResult(answer=FALLBACK_ANSWER)
+        return RagResult(answer=fallback)
 
     context = context_service.build_context(results)
-    system_prompt = build_system_prompt(context)
+    system_prompt = prompt_builder(context)
 
     provider = llm_provider or get_llm_provider()
     try:
         answer = provider.answer(system_prompt=system_prompt, question=question)
     except LLMProviderError as exc:
         logger.warning("LLM provider failed; returning grounded fallback: %s", exc)
-        return RagResult(answer=FALLBACK_ANSWER)
+        return RagResult(answer=fallback)
 
-    answer = answer.strip() or FALLBACK_ANSWER
+    answer = answer.strip() or fallback
     citations = citation_service.build_citations(answer, results)
     return RagResult(answer=answer, citations=citations)
 
 
-def _retrieve(db: Session, question: str, user: User, retrieval_service=None) -> list[RetrievalCandidate]:
-    """Run hybrid retrieval; ``retrieval_service`` fills the dense stage."""
+def _retrieve(
+    db: Session,
+    question: str,
+    user: User,
+    retrieval_service=None,
+    *,
+    document_ids: list | None = None,
+) -> list[RetrievalCandidate]:
+    """Run hybrid retrieval; ``retrieval_service`` fills the dense stage.
+
+    ``document_ids`` is keyword-only so existing test stubs that patch
+    ``_retrieve`` with a 4-argument signature keep working unchanged.
+    """
     dense = retrieval_service
     pipeline = HybridRetrievalService(dense_service=dense)
-    return pipeline.retrieve(db, query=question, user=user)
+    return pipeline.retrieve(
+        db, query=question, user=user, document_ids=document_ids
+    )
 
 
 def search_documents(

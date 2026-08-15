@@ -56,11 +56,23 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
       LLM_MODEL: ${LLM_MODEL:-gemini-flash-latest}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Public demo mode: build the demo index once with
+      # `docker compose exec backend python -m scripts.build_demo_index`,
+      # then set DEMO_MODE=true to expose the no-upload public demo.
+      # The default DEMO_DOCUMENT_PATH (../Doc/…) resolves to the mounted
+      # ./Doc directory inside the container, so the demo PDF is always present.
+      DEMO_MODE: ${DEMO_MODE:-false}
+      DEMO_DOCUMENT_PATH: ${DEMO_DOCUMENT_PATH:-../Doc/DocMind_Public_Demo_Test_Document.pdf}
+      DEMO_DOCUMENT_ID: ${DEMO_DOCUMENT_ID:-11111111-1111-4111-8111-111111111111}
+      DEMO_DOCUMENT_TITLE: ${DEMO_DOCUMENT_TITLE:-DocMind Public Demo Test Document}
     ports:
       - "8000:8000"
     volumes:
       # Bind mount enables hot-reload during development.
       - ./backend:/app
+      # Make the demo PDF reachable inside the container at /Doc (read-only),
+      # matching the default DEMO_DOCUMENT_PATH=../Doc/… from /app.
+      - ./Doc:/Doc:ro
     depends_on:
       db:
         condition: service_healthy
