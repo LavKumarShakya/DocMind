@@ -79,15 +79,15 @@ def test_llm_failure_returns_grounded_fallback(db_session, user_factory, fake_ll
 
     set_llm_provider(FailingProvider())
     try:
-        result = rag_service.answer_question(
-            db_session,
-            question="Any question at all?",
-            user=user,
-            retrieval_service=StubRetrievalService([_chunk("some evidence")]),
-        )
+        with pytest.raises(LLMProviderError):
+            rag_service.answer_question(
+                db_session,
+                question="Any question at all?",
+                user=user,
+                retrieval_service=StubRetrievalService([_chunk("some evidence")]),
+            )
     finally:
         set_llm_provider(None)
-    assert result.answer == FALLBACK_ANSWER
 
 
 def test_message_too_long_rejected(db_session, user_factory):

@@ -29,6 +29,7 @@ export function DemoChat({ info }: { info: DemoInfo }) {
   const [messages, setMessages] = useState<DemoMessage[]>([]);
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [activeSource, setActiveSource] = useState<CitationItem | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +42,7 @@ export function DemoChat({ info }: { info: DemoInfo }) {
     if (!trimmed || asking) return;
     setAsking(true);
     setError(null);
+    setLastQuestion(trimmed);
     const userMessage: DemoMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -65,9 +67,17 @@ export function DemoChat({ info }: { info: DemoInfo }) {
       };
       setMessages((current) => [...current, assistantMessage]);
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Unable to get an answer."
-      );
+      if (err instanceof ApiError) {
+        if (err.code === "LLM_RATE_LIMITED") {
+          setError("DocMind's AI service is temporarily rate limited. Please try again shortly.");
+        } else if (err.code === "LLM_UNAVAILABLE") {
+          setError("DocMind's AI service is temporarily unavailable. Please try again.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Unable to get an answer.");
+      }
     } finally {
       setAsking(false);
     }
@@ -174,8 +184,17 @@ export function DemoChat({ info }: { info: DemoInfo }) {
         </div>
 
         {error && (
-          <Alert className="mt-4" variant="error">
-            {error}
+          <Alert className="mt-4 flex flex-col gap-2" variant="error">
+            <div>{error}</div>
+            {lastQuestion && (
+              <button
+                type="button"
+                onClick={() => void ask(lastQuestion)}
+                className="text-xs self-start underline font-semibold text-[var(--danger)] hover:text-[var(--danger-muted)]"
+              >
+                Retry question
+              </button>
+            )}
           </Alert>
         )}
 

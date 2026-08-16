@@ -139,7 +139,8 @@ npm run dev                           # http://localhost:3000
 When `DEMO_MODE=true`, the landing page becomes an unauthenticated chat UI anchored to a single pre-indexed document. No uploads, no account required.
 
 - **Pre-indexed:** the demo PDF is processed once; runtime uses lightweight TF-IDF retrieval (no embedding model or reranker loaded)
-- **Grounded answers:** out-of-scope questions are refused, not hallucinated
+- **Grounded answers:** out-of-scope questions receive a genuine grounded refusal ("I couldn't find that information in the demo document"), not hallucinated answers.
+- **Provider failures surfaced explicitly:** if the upstream LLM API rate limits the request, the frontend displays a clear rate-limit message with a retry option, rather than treating it as a document-level refusal.
 - **Example questions:** clickable chips that run real retrieval, not hardcoded answers
 - **Auto-seeded:** in production, the demo index is automatically seeded from a committed artifact on startup — no manual build step needed on hosted instances
 
@@ -215,6 +216,19 @@ The implemented pipeline runs entirely server-side with backend-enforced permiss
 
 ---
 
+## Error Behavior
+
+DocMind strictly distinguishes between document-level knowledge gaps and upstream API failures:
+
+- **Supported document question** → Retrieval → Grounded answer + citations
+- **Unsupported document question** → Grounded refusal ("I couldn't find that information...")
+- **LLM rate limited** → HTTP 503 / `LLM_RATE_LIMITED` (frontend displays rate-limit message)
+- **LLM provider unavailable** → HTTP 503 / `LLM_UNAVAILABLE` (frontend displays temporary unavailable message)
+
+Raw provider exceptions are never exposed to the end user.
+
+---
+
 ## Evaluation
 
 Measured on a 2-document corpus using the Phase 7 evaluation harness (`backend/evaluation/`). These numbers are indicative of this specific corpus and setup, not a claim about larger corpora.
@@ -260,7 +274,7 @@ Measured on a 2-document corpus using the Phase 7 evaluation harness (`backend/e
 - **Confidence gate ≠ hallucination shield** — 46.15% false acceptance rate on unanswerable questions.
 - **5 false rejections** — answerable questions where retrieval misses evidence (dense below 0.65 cutoff + BM25 term mismatch).
 - **`section` citations often null** — chunking does not extract section headings.
-- **Gemini free-tier quota** — the free tier can be exhausted (HTTP 429); the system degrades to grounded refusal.
+- **Provider API Quotas** — the public demo uses a Gemini API configuration subject to upstream provider quotas. When the provider rate limit is reached, DocMind surfaces a temporary rate-limit message rather than treating the request as a grounded refusal.
 - **Synchronous ingestion** — PDF processing blocks the API; designed for demo/small-instance workloads.
 - **JWT in `localStorage`** — dev-tier persistence; production should use httpOnly cookies.
 

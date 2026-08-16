@@ -23,6 +23,7 @@ export default function ChatDetailPage() {
   const [loading, setLoading] = useState(true);
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [activeSource, setActiveSource] = useState<CitationItem | null>(null);
 
@@ -55,6 +56,7 @@ export default function ChatDetailPage() {
   const handleAsk = async (text: string) => {
     setAsking(true);
     setError(null);
+    setLastQuestion(text);
 
     // Optimistic User Message
     const userMsg: MessageDetail = {
@@ -89,7 +91,17 @@ export default function ChatDetailPage() {
         return [...filtered, userMsg, assistantMsg];
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Unable to get an answer.");
+      if (err instanceof ApiError) {
+        if (err.code === "LLM_RATE_LIMITED") {
+          setError("DocMind's AI service is temporarily rate limited. Please try again shortly.");
+        } else if (err.code === "LLM_UNAVAILABLE") {
+          setError("DocMind's AI service is temporarily unavailable. Please try again.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Unable to get an answer.");
+      }
       // Rollback user optimistic message on failure so chat history stays clean
       setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
     } finally {
@@ -162,8 +174,17 @@ export default function ChatDetailPage() {
         )}
 
         {error && (
-          <Alert variant="error" className="mt-4">
-            {error}
+          <Alert className="mt-4 flex flex-col gap-2" variant="error">
+            <div>{error}</div>
+            {lastQuestion && (
+              <button
+                type="button"
+                onClick={() => void handleAsk(lastQuestion)}
+                className="text-xs self-start underline font-semibold text-[var(--danger)] hover:text-[var(--danger-muted)]"
+              >
+                Retry question
+              </button>
+            )}
           </Alert>
         )}
         <div ref={chatEndRef} />

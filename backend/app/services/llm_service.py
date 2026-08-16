@@ -20,8 +20,13 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
-class LLMProviderError(Exception):
+from app.core.errors import ApiError
+
+class LLMProviderError(ApiError):
     """Raised when an LLM provider cannot produce an answer."""
+
+    def __init__(self, message: str, code: str = "LLM_UNAVAILABLE", status_code: int = 503) -> None:
+        super().__init__(code=code, message=message, status_code=status_code)
 
 
 class LLMProvider(ABC):
@@ -48,7 +53,7 @@ class LocalExtractiveProvider(LLMProvider):
         marker = "[1] "
         index = system_prompt.find(marker)
         if index == -1:
-            raise LLMProviderError("No evidence block [1] present in the prompt.")
+            raise LLMProviderError("No evidence block [1] present in the prompt.", code="LLM_EVIDENCE_MISSING", status_code=500)
         snippet = system_prompt[index + len(marker) :]
         snippet = snippet[:400].strip()
         return f"Based on the top document match: {snippet}"
@@ -69,7 +74,9 @@ class GeminiProvider(LLMProvider):
         if not self.api_key:
             raise LLMProviderError(
                 "GEMINI_API_KEY is not configured. Set LLM_PROVIDER=gemini with a "
-                "valid GEMINI_API_KEY, or use LLM_PROVIDER=local for offline testing."
+                "valid GEMINI_API_KEY, or use LLM_PROVIDER=local for offline testing.",
+                code="LLM_CONFIG_MISSING",
+                status_code=500,
             )
 
     def answer(self, *, system_prompt: str, question: str) -> str:
@@ -77,24 +84,33 @@ class GeminiProvider(LLMProvider):
             from google import genai
             from google.genai import types as genai_types
         except ImportError as exc:  # pragma: no cover - dependency always installed
-            raise LLMProviderError("google-genai is not installed.") from exc
+            raise LLMProviderError("google-genai is not installed.", code="LLM_CONFIG_MISSING", status_code=500) from exc
 
         client = genai.Client(
             api_key=self.api_key,
             http_options=genai_types.HttpOptions(timeout=self.REQUEST_TIMEOUT_MS),
         )
-        response = client.models.generate_content(
-            model=self.model,
-            contents=question,
-            config=genai_types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                temperature=0.2,
-            ),
-        )
+        try:
+            response = client.models.generate_content(
+                model=self.model,
+                contents=question,
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    temperature=0.0,
+                ),
+            )
+        except genai.errors.APIError as exc:
+            is_rate_limit = exc.status_code == 429
+            if is_rate_limit:
+                raise LLMProviderError("The AI service is temporarily rate limited. Please try again shortly.", code="LLM_RATE_LIMITED", status_code=503) from exc
+            raise LLMProviderError("The AI service is temporarily unavailable. Please try again.", code="LLM_UNAVAILABLE", status_code=503) from exc
+        except Exception as exc:
+            raise LLMProviderError("The AI service encountered an unexpected error.", code="LLM_UNAVAILABLE", status_code=503) from exc
+
         text = response.text if response.text else ""
         text = text.strip()
         if not text:
-            raise LLMProviderError("Gemini returned an empty response.")
+            raise LLMProviderError("Gemini returned an empty response.", code="LLM_UNAVAILABLE", status_code=503)
         return text
 
 

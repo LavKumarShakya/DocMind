@@ -144,7 +144,9 @@ Ask a grounded question (RAG).
 }
 ```
 
-When no evidence meets the retrieval thresholds, evidence is below `CONFIDENCE_THRESHOLD`, or the LLM fails, the answer is the fixed grounded fallback: *"I couldn't find sufficient information in the available university documents."*
+When no evidence meets the retrieval thresholds, or evidence is below `CONFIDENCE_THRESHOLD`, the answer is the fixed grounded fallback: *"I couldn't find sufficient information in the available university documents."* (The LLM is skipped).
+
+If the LLM provider fails (e.g. rate limits or unavailability), the endpoint returns a `503 Service Unavailable` with `LLM_RATE_LIMITED` or `LLM_UNAVAILABLE` rather than defaulting to the grounded fallback.
 
 With `conversation_id` omitted, a new conversation is created and the exchange is persisted.
 
@@ -160,7 +162,7 @@ User-facing search. Same retrieval as `/api/search` but returns clean results: `
 
 ### Chat Error Codes
 
-`MESSAGE_EMPTY`, `MESSAGE_TOO_LONG`, `CONVERSATION_NOT_FOUND`
+`MESSAGE_EMPTY`, `MESSAGE_TOO_LONG`, `CONVERSATION_NOT_FOUND`, `LLM_RATE_LIMITED`, `LLM_UNAVAILABLE`
 
 ### LLM Provider
 
@@ -253,6 +255,16 @@ All errors use a consistent envelope:
   "error": {
     "code": "DOCUMENT_PROCESSING_FAILED",
     "message": "The document could not be processed."
+  }
+}
+```
+
+Provider errors specifically return HTTP 503 with the following structure:
+```json
+{
+  "error": {
+    "code": "LLM_RATE_LIMITED",
+    "message": "The AI service is temporarily rate limited. Please try again shortly."
   }
 }
 ```

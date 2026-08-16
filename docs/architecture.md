@@ -104,7 +104,7 @@ All phases are complete. The project was built incrementally:
 - Permission filtering happens in the SQL query — chunks are joined to documents and filtered by visibility rules.
 - Context builder labels each retrieved chunk `[n]` and truncates whole chunks to `MAX_CONTEXT_CHARS`.
 - LLM provider abstraction: `gemini` (Google Gemini via `google-genai`, default) and `local` (offline development provider).
-- Grounded prompting with prompt-injection hardening.
+- Grounded prompting with prompt-injection hardening. Generation uses `temperature=0.0` for strictly deterministic, grounded answers.
 - Citation mapping: tags in the model's answer are resolved against retrieved chunks, producing structured citations.
 - RAG orchestrator with graceful degradation.
 - Chat and search endpoints (`POST /api/chat`, `POST /api/search`).

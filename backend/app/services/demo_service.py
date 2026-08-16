@@ -507,15 +507,5 @@ def answer_demo_question(db: Session, *, question: str) -> DemoAnswer:
         )
     except ApiError:
         raise
-    except Exception as exc:
-        # Provider failures (construction or transient API/network errors, e.g.
-        # Gemini 429/503) must not surface a 500 to every visitor: refuse
-        # gracefully instead of hallucinating or erroring.
-        logger.warning(
-            "Demo question could not be answered (provider/retrieval failure); "
-            "returning grounded refusal: %s",
-            exc,
-        )
-        return DemoAnswer(answer=DEMO_FALLBACK_ANSWER)
 
     return DemoAnswer(answer=result.answer, citations=result.citations)

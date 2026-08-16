@@ -37,7 +37,9 @@ Answer + sources
 
 - **Upload is disabled.** `POST /api/documents` (upload, process, version) returns `403 DEMO_MODE` while demo mode is on. Set `DEMO_MODE=false` to restore the upload workflow.
 
-- **Grounded answers only.** The demo system prompt refuses out-of-scope questions with *"I couldn't find that information in the demo document. Try asking a question about the evaluation, metrics, or findings."* — general knowledge is never used. Provider/LLM failures degrade to this grounded refusal rather than a 500.
+- **Grounded answers only.** The demo system prompt refuses out-of-scope questions with *"I couldn't find that information in the demo document. Try asking a question about the evaluation, metrics, or findings."* — general knowledge is never used. 
+
+- **Provider failures surfaced explicitly.** If the upstream provider (e.g. Gemini) rate-limits the request or becomes unavailable, the demo API returns a 503 error (`LLM_RATE_LIMITED` or `LLM_UNAVAILABLE`) rather than treating the failure as a grounded refusal. The frontend displays a rate-limit/unavailable message with a retry option.
 
 - **Frontend.** The landing page calls `GET /api/demo/info` at runtime. When demo mode is active it renders the demo chat (document card, message history with Sources, "Try asking" chip row, chat input); otherwise the standard landing page is shown unchanged. No frontend build flag is required.
 
@@ -68,7 +70,7 @@ docker compose exec backend python -m scripts.build_demo_index
 docker compose up -d
 ```
 
-> **Model note.** The default `LLM_MODEL=gemini-flash-latest` can be unavailable during Google free-tier capacity spikes (HTTP 503). The demo then returns the grounded refusal, never a wrong answer. If that happens, set `LLM_MODEL` to a currently-available model (e.g. `gemini-2.5-flash`).
+> **Model note.** The default `LLM_MODEL=gemini-flash-latest` (or `gemini-2.5-flash`) is subject to upstream provider quotas on the Gemini Free Tier. When capacity spikes or quota is exhausted (HTTP 429), the demo explicitly surfaces a temporary rate-limit message to the user rather than failing silently or hallucinating a refusal.
 
 ---
 

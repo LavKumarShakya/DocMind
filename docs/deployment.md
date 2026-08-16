@@ -112,7 +112,7 @@ The first `POST /api/documents/{id}/process` triggers download of `BAAI/bge-base
 - **First PDF process is very slow / appears hung** — the BGE model is downloading on first use; give it a minute (check `docker compose logs -f backend`).
 - **Out-of-memory during processing** — the stack needs ~8 GB. Close other apps or increase Docker Desktop's memory limit (Settings → Resources).
 - **Backend shows `Could not connect to server` for the database** — the DB healthcheck may still be warming up; the backend waits on it. Check `docker compose logs db`.
-- **Chat returns the grounded fallback even with documents** — either no evidence cleared the confidence gate (try a question with keywords from the document) or the Gemini key is missing/invalid (check `docker compose logs backend`).
+- **Chat returns the grounded fallback even with documents** — no evidence cleared the confidence gate (try a question with keywords from the document). Note that if the Gemini key is missing or quota is exhausted, you will see a 503 Service Unavailable / Rate Limited error instead of a fallback.
 - **Port 3000 or 8000 already in use** — stop the conflicting service or change the published ports in `docker-compose.yml`.
 
 ---

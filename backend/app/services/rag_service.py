@@ -107,11 +107,7 @@ def answer_question(
     system_prompt = prompt_builder(context)
 
     provider = llm_provider or get_llm_provider()
-    try:
-        answer = provider.answer(system_prompt=system_prompt, question=question)
-    except LLMProviderError as exc:
-        logger.warning("LLM provider failed; returning grounded fallback: %s", exc)
-        return RagResult(answer=fallback)
+    answer = provider.answer(system_prompt=system_prompt, question=question)
 
     answer = answer.strip() or fallback
     citations = citation_service.build_citations(answer, results)

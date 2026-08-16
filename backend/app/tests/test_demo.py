@@ -164,15 +164,15 @@ def test_demo_chat_uses_demo_pipeline(db_session, demo_mode, monkeypatch):
     assert captured["confidence_threshold"] == settings.DEMO_CONFIDENCE_THRESHOLD
 
 
-def test_demo_chat_llm_failure_returns_demo_fallback(db_session, demo_mode, monkeypatch):
+def test_demo_chat_llm_failure_raises_provider_error(db_session, demo_mode, monkeypatch):
     _seed_demo_document(db_session)
 
     def boom(*args, **kwargs):
         raise LLMProviderError("no API key")
 
     monkeypatch.setattr(rag_service, "answer_question", boom)
-    result = demo_service.answer_demo_question(db_session, question="hello")
-    assert result.answer == DEMO_FALLBACK_ANSWER
+    with pytest.raises(LLMProviderError):
+        demo_service.answer_demo_question(db_session, question="hello")
 
 
 def test_demo_chat_endpoint_returns_answer_and_citations(client, demo_mode, db_session, monkeypatch):
