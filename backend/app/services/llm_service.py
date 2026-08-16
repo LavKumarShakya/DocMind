@@ -82,25 +82,24 @@ class GeminiProvider(LLMProvider):
     def answer(self, *, system_prompt: str, question: str) -> str:
         try:
             from google import genai
-            from google.genai import types as genai_types
         except ImportError as exc:  # pragma: no cover - dependency always installed
             raise LLMProviderError("google-genai is not installed.", code="LLM_CONFIG_MISSING", status_code=500) from exc
 
         client = genai.Client(
             api_key=self.api_key,
-            http_options=genai_types.HttpOptions(timeout=self.REQUEST_TIMEOUT_MS),
+            http_options=genai.types.HttpOptions(timeout=self.REQUEST_TIMEOUT_MS),
         )
         try:
             response = client.models.generate_content(
                 model=self.model,
                 contents=question,
-                config=genai_types.GenerateContentConfig(
+                config=genai.types.GenerateContentConfig(
                     system_instruction=system_prompt,
                     temperature=0.0,
                 ),
             )
         except genai.errors.APIError as exc:
-            is_rate_limit = exc.status_code == 429
+            is_rate_limit = exc.code == 429
             if is_rate_limit:
                 raise LLMProviderError("The AI service is temporarily rate limited. Please try again shortly.", code="LLM_RATE_LIMITED", status_code=503) from exc
             raise LLMProviderError("The AI service is temporarily unavailable. Please try again.", code="LLM_UNAVAILABLE", status_code=503) from exc
