@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, Loader2, MessageSquareText } from "lucide-react";
+import { FileText, Loader2, MessageSquareText, Download } from "lucide-react";
 
 import { Alert } from "@/components/ui/alert";
 import { ChatMessage, type CitationItem } from "@/components/chat/chat-message";
@@ -105,9 +105,19 @@ export function DemoChat({ info }: { info: DemoInfo }) {
             </p>
           </div>
         </div>
-        <span className="rounded-full border border-[var(--primary-muted)] bg-[var(--primary-faint)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--primary)] shrink-0">
-          Public Demo
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href="/DocMind_Public_Demo_Test_Document.pdf"
+            download
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--edge-strong)] bg-[var(--canvas-raised)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] hover:border-[var(--primary-muted)] hover:bg-[var(--primary-faint)] hover:text-[var(--primary)] transition-all no-underline cursor-pointer"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden />
+            Download PDF
+          </a>
+          <span className="rounded-full border border-[var(--primary-muted)] bg-[var(--primary-faint)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
+            Public Demo
+          </span>
+        </div>
       </div>
 
       {/* Chat panel */}
@@ -170,26 +180,24 @@ export function DemoChat({ info }: { info: DemoInfo }) {
         )}
 
         {/* Try asking Section */}
-        {messages.length === 0 && (
-          <div className="mt-6 border-t border-[var(--edge)] pt-5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-faint)]">
-              Try asking
-            </span>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              {EXAMPLE_QUESTIONS.map((example) => (
-                <button
-                  key={example}
-                  type="button"
-                  onClick={() => void ask(example)}
-                  disabled={asking}
-                  className="rounded-full border border-[var(--edge-strong)] bg-[var(--canvas-raised)] px-3.5 py-1.5 text-left text-xs text-[var(--ink-muted)] transition-all hover:border-[var(--primary-muted)] hover:bg-[var(--primary-faint)] hover:text-[var(--primary)] disabled:pointer-events-none disabled:opacity-45"
-                >
-                  {example}
-                </button>
-              ))}
-            </div>
+        <div className="mt-6 border-t border-[var(--edge)] pt-5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-faint)]">
+            Try asking
+          </span>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {EXAMPLE_QUESTIONS.map((example) => (
+              <button
+                key={example}
+                type="button"
+                onClick={() => void ask(example)}
+                disabled={asking}
+                className="rounded-full border border-[var(--edge-strong)] bg-[var(--canvas-raised)] px-3.5 py-1.5 text-left text-xs text-[var(--ink-muted)] transition-all hover:border-[var(--primary-muted)] hover:bg-[var(--primary-faint)] hover:text-[var(--primary)] disabled:pointer-events-none disabled:opacity-45"
+              >
+                {example}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Input */}
         <div className="mt-6">
