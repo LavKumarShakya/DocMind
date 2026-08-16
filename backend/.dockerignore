@@ -1,16 +1,35 @@
 # Keep the docker build context lean and reproducible.
+# Python artifacts
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
-coverage.xml
-htmlcov/
-storage/
-.env
 .venv/
 venv/
+coverage.xml
+htmlcov/
+
+# Local data that must never ship in the image (persistent volumes carry it)
+storage/
+data/
 *.log
-# Development-only content must never ship in the image.
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Development-only content that must never ship in the production image
 evaluation/
 tests/
 requirements-dev.txt
+
+# Version control / tooling
+.git
+.gitignore
+.github/
+.agent/
+
+# Model / Hugging Face caches downloaded on the host
+huggingface/
+.cache/

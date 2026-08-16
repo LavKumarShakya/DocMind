@@ -11,8 +11,11 @@ structured citations pointing to the source document and page.
 
 > **Status: Phase 9 (Public demo mode) complete.** All eight planned phases are
 > implemented and regression-tested, plus a public demo mode that showcases the
-> system on a single pre-indexed PDF without uploads. This README documents the
-> full system, its measured evaluation results, and the remaining known
+> system on a single pre-indexed PDF without uploads. The same repository also
+> ships a production-oriented **self-hosted Docker** workflow
+> ([Self-hosted Docker](#self-hosted-docker)) for the full authenticated
+> application. This README documents the full system, its measured evaluation
+> results, and the remaining known
 > limitations (see [Development roadmap](#development-roadmap),
 > [Evaluation methodology](#evaluation-methodology) and
 > [Known limitations](#known-limitations)).
@@ -30,16 +33,17 @@ structured citations pointing to the source document and page.
 7. [Environment setup](#environment-setup)
 8. [Database setup](#database-setup)
 9. [Docker setup](#docker-setup)
-10. [Running locally](#running-locally)
-11. [API documentation](#api-documentation)
-12. [RAG pipeline](#rag-pipeline)
-13. [Evaluation methodology](#evaluation-methodology)
-14. [Development roadmap](#development-roadmap)
-15. [Future improvements](#future-improvements)
-16. [Known limitations](#known-limitations)
-17. [Security](#security)
-18. [Deployment](#deployment)
-19. [Demo checklist](#demo-checklist)
+10. [Self-hosted Docker](#self-hosted-docker)
+11. [Running locally](#running-locally)
+12. [API documentation](#api-documentation)
+13. [RAG pipeline](#rag-pipeline)
+14. [Evaluation methodology](#evaluation-methodology)
+15. [Development roadmap](#development-roadmap)
+16. [Future improvements](#future-improvements)
+17. [Known limitations](#known-limitations)
+18. [Security](#security)
+19. [Deployment](#deployment)
+20. [Demo checklist](#demo-checklist)
 
 ---
 
@@ -448,7 +452,8 @@ Notable compatibility decisions:
 │   └── .env.example
 ├── Doc/
 │   └── DocMind_Public_Demo_Test_Document.pdf   # demo PDF indexed by scripts/build_demo_index.py
-├── docker-compose.yml
+├── docker-compose.yml        # self-hosted production stack
+├── docker-compose.dev.yml    # development stack (hot-reload)
 ├── .env.example
 └── README.md
 ```
@@ -469,22 +474,48 @@ app/db/repositories/ data-access layer
 
 ## Prerequisites
 
-- Docker Desktop (with the Linux engine / WSL2 backend)
+### Self-hosted (Docker)
+
+The easiest way to run the full DocMind application is with Docker:
+
+- **Docker Desktop** (with the Linux engine / WSL2 backend on Windows, or the
+  Docker Engine + Compose v2 plugin on Linux/macOS)
+- **~8 GB of available RAM** (the embedding and reranker models run in-process
+  on CPU; more RAM makes ingestion and first-load smoother)
+- **~10 GB of free disk space** for images, the model cache and your documents
+- Internet access on first run so the BGE embedder and cross-encoder reranker
+  can be downloaded from Hugging Face (they are cached afterwards)
+
+No Python, Node.js, PostgreSQL or other runtime is installed on the host — the
+containers provide everything.
+
+### Local development (host runtimes)
+
 - Python 3.13 (for local backend development)
 - Node.js 20+ (for local frontend development)
+- Docker (for the PostgreSQL + pgvector database)
 - Optional: `make`, Git
 
 ---
 
 ## Environment setup
 
-Copy the example env files and adjust values. **Never commit real
-credentials.**
+### Self-hosted (Docker)
+
+For the Docker stack, only the root `.env` is needed — `docker-compose.yml`
+reads it for variable substitution. **Never commit real credentials.**
 
 ```bash
-# docker-compose reads this file for variable substitution
 cp .env.example .env
+# edit .env and set at minimum:
+#   POSTGRES_PASSWORD=<strong random password>
+#   SECRET_KEY=<strong random string, 32+ bytes>
+#   GEMINI_API_KEY=<your Google AI Studio API key>
+```
 
+### Local development (host runtimes)
+
+```bash
 # backend (local development)
 cp backend/.env.example backend/.env
 
@@ -511,7 +542,8 @@ Gemini-backed chat endpoint, set `GEMINI_API_KEY` in the root `.env` (read by
 | `DEBUG` | Enables verbose logging. |
 | `EMBEDDING_DIM` | Vector dimension of the embedding model (768 for BGE-base). Must equal the model's output. |
 | `EMBEDDING_MODEL` | sentence-transformers model name (default `BAAI/bge-base-en-v1.5`). |
-| `STORAGE_DIR` | Local document storage root (replaceable storage layer). |
+| `STORAGE_DIR` | Local document storage root (replaceable storage layer). In Docker this maps to a persistent named volume. |
+| `HF_HOME` | Hugging Face / sentence-transformers model cache directory (persistent named volume in Docker). |
 | `MAX_UPLOAD_SIZE_BYTES` | Maximum accepted PDF upload size (20 MiB default). |
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | Character-based chunking parameters. |
 | `RETRIEVAL_TOP_K` | Number of semantically similar chunks retrieved per question (default 5). |
@@ -681,36 +713,235 @@ python -m alembic current
 
 ## Docker setup
 
+DocMind ships two Compose stacks:
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.yml` | **Self-hosted production** — the full application, production build, persistent volumes. This is what end users run. |
+| `docker-compose.dev.yml` | **Development** — hot-reload, bind-mounted sources, `uvicorn --reload`, `next dev`. |
+
+The self-hosted stack is the primary way to run DocMind. The development stack
+is for people working on the source code. See
+[Self-hosted Docker](#self-hosted-docker) for the full self-hosted workflow and
+[Development workflow](#development-workflow) for the dev stack.
+
+---
+
+## Self-hosted Docker
+
+This is the recommended way to run the full DocMind application locally. It
+requires **no host installs** — Python, Node.js, PostgreSQL, pgvector,
+PyTorch and the ML models all live inside containers.
+
+### 1. Requirements
+
+- **Docker Desktop** (Windows/macOS) or Docker Engine + Compose v2 (Linux).
+- **Memory:** at least **8 GB RAM** recommended. The BGE embedder (~400 MB)
+  and the cross-encoder reranker are loaded into the backend process; on first
+  PDF processing both are in memory. Do not run this stack on a 512 MB box.
+- **Disk:** ~10 GB free for images, the Hugging Face model cache and uploaded
+  documents.
+
+### 2. First-time setup
+
 ```bash
-# build and start the whole stack (db + backend + frontend)
-docker compose up --build
+git clone <repo-url> DocMind
+cd DocMind
 
-# run in the background
-docker compose up -d --build
-
-# watch logs
-docker compose logs -f
-
-# stop
-docker compose down          # keeps the database volume
-docker compose down -v       # also deletes the database volume
+cp .env.example .env
 ```
 
-Services:
+### 3. Configure `.env`
 
-| Service   | Port    | Notes |
-|-----------|---------|-------|
-| `db`      | 5432    | PostgreSQL 16 + pgvector, health-checked |
-| `backend` | 8000    | FastAPI; applies migrations, then `uvicorn --reload` |
-| `frontend`| 3000    | Next.js dev server (`next dev`) |
+Edit `.env` and set at minimum:
 
-The backend and frontend containers bind-mount their source directories for
-hot-reload during development. The frontend's `node_modules` is kept inside
-the container so the host filesystem cannot shadow it.
+```bash
+# Strong random password for PostgreSQL
+POSTGRES_PASSWORD=change-me-strong-password
+
+# JWT signing key (32+ random bytes)
+SECRET_KEY=change-me-64-char-random-string
+
+# Google AI Studio API key (https://aistudio.google.com/apikey)
+GEMINI_API_KEY=AIza...
+```
+
+Optional overrides you may also want:
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `POSTGRES_USER` / `POSTGRES_DB` | `docmind` | Database credentials |
+| `LLM_PROVIDER` | `gemini` | `gemini` (needs key) or `local` (offline dev only) |
+| `CORS_ORIGINS` | `http://localhost:3000` | Frontend origin(s) allowed to call the API |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend URL baked into the frontend build |
+| `STORAGE_DIR` | `/data/storage` | Uploaded-document root (persistent volume) |
+| `HF_HOME` | `/data/huggingface` | Model cache (persistent volume) |
+
+### 4. Gemini API key
+
+Get a key from [Google AI Studio](https://aistudio.google.com/apikey) and put
+it in `.env` as `GEMINI_API_KEY=AIza...`. The key is passed only to the
+backend container; it is **never** baked into the frontend image and never
+exposed to the browser.
+
+If you do not set a key, the chat/search endpoints will return the grounded
+fallback for Gemini (or you can set `LLM_PROVIDER=local` for an offline
+answerer — not for production use).
+
+### 5. Start DocMind
+
+```bash
+docker compose up -d --build
+```
+
+First run downloads the models from Hugging Face (BGE embedder +
+cross-encoder), so it takes longer. Subsequent runs reuse the persisted cache.
+
+### 6. Access the UI
+
+Open **http://localhost:3000**:
+
+- Register an account (always created as `STUDENT`), then log in.
+- The backend API is available at **http://localhost:8000** (`/docs` for
+  Swagger UI).
+- PostgreSQL is **not** exposed to the host.
+
+### 7. Stop DocMind
+
+```bash
+docker compose down
+```
+
+This stops the containers but **keeps all data** (database, uploaded
+documents, model cache) in named volumes.
+
+### 8. Restart DocMind
+
+```bash
+docker compose up -d
+```
+
+Reuses the existing volumes and the persisted model cache — no re-download,
+no data loss.
+
+### 9. Persistent data
+
+All persistent state lives in named Docker volumes:
+
+| Volume | Backs | Survives `docker compose down` |
+|--------|-------|--------------------------------|
+| `docmind_pgdata` | PostgreSQL data | Yes |
+| `docmind_backend_storage` | Uploaded documents (`STORAGE_DIR`) | Yes |
+| `docmind_hf_cache` | Hugging Face model cache (`HF_HOME`) | Yes |
+
+Because the backend storage and model cache are volumes, uploaded PDFs and
+the downloaded models survive container recreation and restarts.
+
+### 10. Remove all data (completely reset)
+
+```bash
+docker compose down -v
+```
+
+`-v` deletes the named volumes (`pgdata`, `backend_storage`, `hf_cache`). This
+erases the database, uploaded documents and the model cache (the models will
+re-download on the next start).
+
+To also remove the images:
+
+```bash
+docker compose down -v --rmi all
+```
+
+### 11. Model download / cache behavior
+
+The first `POST /api/documents/{id}/process` triggers a download of
+`BAAI/bge-base-en-v1.5`; the first chat/search request downloads
+`cross-encoder/ms-marco-MiniLM-L-6-v2`. Both are cached in `/data/huggingface`
+(the `hf_cache` volume). Models load lazily (on first use) and are shared as
+in-process singletons, so a single backend worker avoids duplicate memory.
+
+### 12. Docker architecture
+
+```
+Browser
+   │
+   ▼
+frontend :3000  (production Next.js build, `npm start`)
+   │  browser calls the API directly
+   ▼
+backend :8000   (FastAPI, single uvicorn worker, applies Alembic migrations)
+   │
+   ▼
+PostgreSQL :5432  (internal only — not published to the host)
+```
+
+- **One backend worker** — the embedding and reranker models are process-local
+  singletons; extra workers would duplicate their memory.
+- **Automatic migrations** — the backend runs `alembic upgrade head` before
+  uvicorn starts, so the schema is kept current on every startup.
+- **Health checks** — the backend container is health-checked against
+  `GET /api/health` (which verifies DB connectivity); the frontend waits for
+  the backend to be healthy before serving, and the backend waits for the
+  database healthcheck. No arbitrary sleeps.
+
+### 13. Troubleshooting
+
+- **"Connection refused" on `localhost:3000`** — wait for the first `--build`
+  to finish; frontend containers are often still building.
+- **First PDF process is very slow / appears hung** — the BGE model is
+  downloading on first use; give it a minute (see `docker compose logs -f
+  backend`).
+- **Out-of-memory during processing** — the stack needs ~8 GB. Close other
+  apps or increase Docker Desktop's memory limit (Settings → Resources).
+- **Backend logs show `Could not connect to server` for the database** — the
+  DB healthcheck may still be warming up; the backend waits on it. Check
+  `docker compose logs db`.
+- **Chat returns the grounded fallback even with documents** — either no
+  evidence cleared the confidence gate (try a question with keywords from the
+  document) or the Gemini key is missing/invalid (see `docker compose logs
+  backend`).
+- **Port 3000 or 8000 already in use** — stop the conflicting service or
+  change the published ports in `docker-compose.yml`.
+
+### 14. Production vs development workflow
+
+| Aspect | Self-hosted (`docker-compose.yml`) | Development (`docker-compose.dev.yml`) |
+|--------|-----------------------------------|----------------------------------------|
+| Backend | Production image, single worker, no reload | `--reload`, bind-mounted `./backend` |
+| Frontend | Production build (`npm start`) | `next dev`, bind-mounted `./frontend` |
+| PostgreSQL port | Not exposed | Published on `5432` |
+| Data | Named volumes (persistent) | Named volumes (persistent) |
+| Command | `docker compose up -d --build` | `docker compose -f docker-compose.dev.yml up --build` |
+
+The Docker package runs the **full** DocMind application — authentication, PDF
+ingestion, embeddings, hybrid retrieval, reranking, Gemini answers, citations,
+conversations, search, feedback, versioning and admin. It is not a demo or a
+stripped-down build.
 
 ---
 
 ## Running locally
+
+### Development workflow (Docker)
+
+If you are developing DocMind, use the dev Compose stack which hot-reloads
+both the backend and frontend:
+
+```bash
+# start the dev stack (db + backend + frontend)
+docker compose -f docker-compose.dev.yml up --build
+
+# watch logs
+docker compose -f docker-compose.dev.yml logs -f
+
+# stop (keeps the database volume)
+docker compose -f docker-compose.dev.yml down
+```
+
+The dev stack bind-mounts `./backend` and `./frontend` for hot-reload, runs
+`uvicorn --reload` and `next dev`, and publishes PostgreSQL on `5432` for
+local tooling.
 
 ### Backend (host)
 
@@ -732,10 +963,10 @@ On first `POST /api/documents/{id}/process` the embedding model
 cross-encoder reranker (`RERANKER_MODEL`) is downloaded on the first chat or
 search request. GPU is not required (CPU inference works).
 
-> Development note: the frontend dev container shares `./frontend/.next` with
-> the host. After running `npm run build` on the host and then
-> `docker compose up` for the dev server, remove `frontend/.next` once so the
-> container rebuilds its dev bundle cleanly.
+> Development note: the dev frontend container shares `./frontend/.next` with
+> the host via the bind mount. After running `npm run build` on the host and
+> then starting `docker compose -f docker-compose.dev.yml up`, remove
+> `frontend/.next` once so the container rebuilds its dev bundle cleanly.
 
 ### Frontend (host)
 
@@ -1169,7 +1400,8 @@ not undiscovered bugs.
 ## Deployment
 
 DocMind ships as a Docker Compose stack (database + backend + frontend) for
-single-host deployments. There is no shared hosted instance.
+single-host deployments (see [Self-hosted Docker](#self-hosted-docker)). There
+is no shared hosted instance.
 
 **Production checklist**
 
@@ -1180,7 +1412,8 @@ single-host deployments. There is no shared hosted instance.
    non-production offline answerer).
 4. Put the app behind a reverse proxy (nginx / Caddy) that terminates TLS and
    proxies `/` to the frontend (:3000) and `/api` to the backend (:8000).
-5. Back up the `pgdata` volume and the `STORAGE_DIR` document storage.
+5. Back up the `pgdata`, `backend_storage` and `hf_cache` volumes (database,
+   uploaded documents and model cache).
 6. Verify migrations: the backend runs `alembic upgrade head` on startup and
    `python -m alembic check` reports no drift.
 
@@ -1251,7 +1484,7 @@ Docker Web Service against Render's managed PostgreSQL (which ships the
 
 ## Demo checklist
 
-A 5-minute walkthrough against `docker compose up`:
+A 5-minute walkthrough against the self-hosted stack (`docker compose up -d --build`):
 
 1. **Landing page** — `http://localhost:3000` renders the live backend health
    card (API status `ok`, database `ok`).

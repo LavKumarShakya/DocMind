@@ -176,7 +176,7 @@ export default function Home() {
         </nav>
       </header>
 
-      {demo?.demo_mode ? (
+{demo?.demo_mode ? (
         <DemoChat info={demo} />
       ) : (
         /* Hero */

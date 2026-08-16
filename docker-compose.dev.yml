@@ -1,0 +1,101 @@
+name: docmind-dev
+
+# Development Compose stack for DocMind (hot-reload, bind-mounted sources).
+#
+# This is the developer workflow companion to docker-compose.yml (the
+# self-hosted production stack). It keeps the original developer experience:
+# backend and frontend sources are bind-mounted for hot-reload, the backend
+# runs `uvicorn --reload`, the frontend runs `next dev`, and PostgreSQL is
+# published on 5432 for local tooling.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up --build
+#   open http://localhost:3000
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: docmind-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-docmind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docmind_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-docmind}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: docmind-dev-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-docmind}:${POSTGRES_PASSWORD:-docmind_dev_password}@db:5432/${POSTGRES_DB:-docmind}
+      APP_ENV: ${APP_ENV:-development}
+      DEBUG: ${DEBUG:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-me-in-production}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-768}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-base-en-v1.5}
+      STORAGE_DIR: ${STORAGE_DIR:-/data/storage}
+      HF_HOME: ${HF_HOME:-/data/huggingface}
+      MAX_UPLOAD_SIZE_BYTES: ${MAX_UPLOAD_SIZE_BYTES:-20971520}
+      CHUNK_SIZE: ${CHUNK_SIZE:-1000}
+      CHUNK_OVERLAP: ${CHUNK_OVERLAP:-150}
+      RETRIEVAL_TOP_K: ${RETRIEVAL_TOP_K:-5}
+      RETRIEVAL_MIN_SIMILARITY: ${RETRIEVAL_MIN_SIMILARITY:-0.65}
+      MAX_CONTEXT_CHARS: ${MAX_CONTEXT_CHARS:-8000}
+      MAX_MESSAGE_LENGTH: ${MAX_MESSAGE_LENGTH:-2000}
+      DENSE_CANDIDATE_K: ${DENSE_CANDIDATE_K:-20}
+      BM25_CANDIDATE_K: ${BM25_CANDIDATE_K:-20}
+      RERANK_TOP_K: ${RERANK_TOP_K:-8}
+      HYBRID_DENSE_WEIGHT: ${HYBRID_DENSE_WEIGHT:-0.6}
+      HYBRID_BM25_WEIGHT: ${HYBRID_BM25_WEIGHT:-0.4}
+      RERANKER_MODEL: ${RERANKER_MODEL:-cross-encoder/ms-marco-MiniLM-L-6-v2}
+      RERANKER_BATCH_SIZE: ${RERANKER_BATCH_SIZE:-8}
+      CONFIDENCE_THRESHOLD: ${CONFIDENCE_THRESHOLD:-0.35}
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      LLM_MODEL: ${LLM_MODEL:-gemini-flash-latest}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind mount enables hot-reload during development.
+      - ./backend:/app
+      # Persistent data even in dev so uploaded docs / models survive restarts.
+      - backend_storage:/data/storage
+      - hf_cache:/data/huggingface
+    depends_on:
+      db:
+        condition: service_healthy
+    # Apply pending migrations, then start the API with reload.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  frontend:
+    build: ./frontend
+    container_name: docmind-dev-frontend
+    restart: unless-stopped
+    environment:
+      # Browsers call the API from the host, so localhost works for local dev.
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      # Keep the image's node_modules so the host filesystem cannot shadow it.
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev
+
+volumes:
+  pgdata:
+  backend_storage:
+  hf_cache:

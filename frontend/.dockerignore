@@ -1,7 +1,27 @@
+# Keep the docker build context lean and reproducible.
 node_modules
 .next
 out
+dist
+*.tsbuildinfo
+next-env.d.ts
+
+# Local env files containing secrets (keep .env.example tracked)
+.env
+.env.local
 .env*.local
+
+# Logs / misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Version control / tooling
 .git
 .gitignore
-npm-debug.log
+.github/
+.agent/
+
+# OS / editor
+.DS_Store
+Thumbs.db
