@@ -8,31 +8,33 @@
   color-scheme: light;
 
   /* Ink — text and dark surfaces */
-  --ink:            hsl(220, 25%, 12%);
-  --ink-muted:      hsl(220, 15%, 40%);
-  --ink-faint:      hsl(220, 10%, 62%);
-  --ink-ghost:      hsl(220, 8%, 78%);
+  --ink:            hsl(222, 47%, 11%);
+  --ink-muted:      hsl(215, 16%, 35%);
+  --ink-faint:      hsl(215, 16%, 47%);
+  --ink-ghost:      hsl(215, 14%, 58%);
 
   /* Canvas — backgrounds */
-  --canvas:         hsl(38, 30%, 97%);
-  --canvas-raised:  hsl(38, 20%, 100%);
-  --canvas-inset:   hsl(38, 20%, 94%);
+  --canvas:         hsl(210, 40%, 98%);
+  --canvas-raised:  hsl(0, 0%, 100%);
+  --canvas-inset:   hsl(210, 20%, 95%);
 
-  /* Accent — warm amber-orange */
-  --accent:         hsl(28, 85%, 55%);
-  --accent-hover:   hsl(28, 85%, 48%);
-  --accent-faint:   hsl(28, 60%, 95%);
-  --accent-muted:   hsl(28, 50%, 80%);
+  /* Primary — blue accent */
+  --primary:        hsl(217, 91%, 60%);
+  --primary-hover:  hsl(217, 91%, 52%);
+  --primary-faint:  hsl(214, 100%, 97%);
+  --primary-muted:  hsl(213, 94%, 79%);
 
   /* Edges — borders and dividers */
-  --edge:           hsl(38, 15%, 88%);
-  --edge-strong:    hsl(38, 15%, 78%);
+  --edge:           hsl(214, 32%, 91%);
+  --edge-strong:    hsl(213, 27%, 84%);
 
   /* Semantic */
-  --success:        hsl(152, 55%, 40%);
-  --success-faint:  hsl(152, 40%, 94%);
-  --danger:         hsl(0, 65%, 52%);
-  --danger-faint:   hsl(0, 50%, 96%);
+  --success:        hsl(142, 72%, 37%);
+  --success-faint:  hsl(138, 76%, 97%);
+  --warning:        hsl(32, 95%, 44%);
+  --warning-faint:  hsl(48, 96%, 89%);
+  --danger:         hsl(0, 72%, 51%);
+  --danger-faint:   hsl(0, 86%, 97%);
   --info:           hsl(210, 60%, 52%);
   --info-faint:     hsl(210, 50%, 95%);
 
@@ -42,14 +44,19 @@
 
   /* Radii */
   --radius-sm:      6px;
-  --radius-md:      10px;
-  --radius-lg:      14px;
+  --radius-md:      8px;
+  --radius-lg:      12px;
   --radius-full:    9999px;
 
   /* Shadows */
-  --shadow-sm:      0 1px 2px hsl(220 25% 12% / 0.04);
-  --shadow-md:      0 2px 8px hsl(220 25% 12% / 0.06), 0 1px 2px hsl(220 25% 12% / 0.04);
-  --shadow-lg:      0 8px 24px hsl(220 25% 12% / 0.08), 0 2px 6px hsl(220 25% 12% / 0.04);
+  --shadow-sm:      0 1px 2px hsl(222 47% 11% / 0.05);
+  --shadow-md:      0 4px 6px -1px hsl(222 47% 11% / 0.08), 0 2px 4px -2px hsl(222 47% 11% / 0.06);
+  --shadow-lg:      0 10px 15px -3px hsl(222 47% 11% / 0.08), 0 4px 6px -4px hsl(222 47% 11% / 0.05);
+
+  /* Layout */
+  --sidebar-width:  256px;
+  --sidebar-collapsed: 64px;
+  --topbar-height:  56px;
 }
 
 /* ─── Base Reset ─── */
@@ -84,14 +91,14 @@ h1, h2, h3, h4 {
 
 /* ─── Selection ─── */
 ::selection {
-  background-color: var(--accent-faint);
+  background-color: var(--primary-faint);
   color: var(--ink);
 }
 
 /* ─── Scrollbar (Webkit) ─── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -113,16 +120,84 @@ h1, h2, h3, h4 {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
 @keyframes pulse-soft {
   0%, 100% { opacity: 1; }
-  50%      { opacity: 0.6; }
+  50%      { opacity: 0.55; }
 }
 
-/* ─── Utility: page entrance ─── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-out-right {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes slide-in-bottom {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Utilities ─── */
 .animate-page-in {
-  animation: fade-in 0.35s ease-out both;
+  animation: fade-in 0.3s ease-out both;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out both;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--canvas-inset) 25%,
+    var(--edge) 50%,
+    var(--canvas-inset) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ─── Focus Visible ─── */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ─── Toast position ─── */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast-container > * {
+  pointer-events: auto;
 }

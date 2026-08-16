@@ -37,7 +37,7 @@ export default function RegisterPage() {
       return;
     }
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError("Password must be at least 8 characters long.");
       return;
     }
 
@@ -49,7 +49,7 @@ export default function RegisterPage() {
       setError(
         err instanceof ApiError
           ? err.message
-          : "Unable to create an account. Please try again.",
+          : "Unable to create an account. Please try again."
       );
     } finally {
       setSubmitting(false);
@@ -59,53 +59,56 @@ export default function RegisterPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[var(--canvas)] px-6 text-[var(--ink)]">
       <div className="w-full max-w-sm space-y-8 animate-page-in">
-        {/* Branding */}
+        {/* Logo Wordmark */}
         <div className="space-y-3 text-center">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] bg-[var(--ink)] text-[var(--canvas)] font-bold text-lg">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] bg-[var(--ink)] text-[var(--canvas)] font-bold text-lg shadow-[var(--shadow-md)]">
             D
           </span>
           <h1
-            className="text-3xl tracking-tight"
+            className="text-3xl tracking-tight text-[var(--ink)]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             Create an account
           </h1>
-          <p className="text-sm text-[var(--ink-faint)]">
-            Register to ask questions about university documents.
+          <p className="text-xs text-[var(--ink-faint)]">
+            Register to query and manage university policy documents.
           </p>
         </div>
 
-        {/* Form card */}
+        {/* Card Form */}
         <form
           onSubmit={handleSubmit}
           className="space-y-5 rounded-[var(--radius-lg)] border border-[var(--edge)] bg-[var(--canvas-raised)] p-7 shadow-[var(--shadow-md)]"
         >
           {error && <Alert variant="error">{error}</Alert>}
 
+          {/* Name */}
           <div className="space-y-1.5">
             <label
               htmlFor="name"
-              className="text-sm font-medium text-[var(--ink-muted)]"
+              className="text-xs font-semibold text-[var(--ink-muted)]"
             >
-              Name
+              Full name
             </label>
             <Input
               id="name"
               type="text"
               required
               autoComplete="name"
-              placeholder="Your name"
+              placeholder="e.g. Jane Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={submitting}
             />
           </div>
 
+          {/* Email */}
           <div className="space-y-1.5">
             <label
               htmlFor="email"
-              className="text-sm font-medium text-[var(--ink-muted)]"
+              className="text-xs font-semibold text-[var(--ink-muted)]"
             >
-              Email
+              Email address
             </label>
             <Input
               id="email"
@@ -115,16 +118,21 @@ export default function RegisterPage() {
               placeholder="you@university.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={submitting}
             />
           </div>
 
+          {/* Password */}
           <div className="space-y-1.5">
-            <label
-              htmlFor="password"
-              className="text-sm font-medium text-[var(--ink-muted)]"
-            >
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="password"
+                className="text-xs font-semibold text-[var(--ink-muted)]"
+              >
+                Password
+              </label>
+              <span className="text-[10px] text-[var(--ink-ghost)]">Min. 8 characters</span>
+            </div>
             <Input
               id="password"
               type="password"
@@ -133,13 +141,15 @@ export default function RegisterPage() {
               placeholder="At least 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={submitting}
             />
           </div>
 
+          {/* Confirm Password */}
           <div className="space-y-1.5">
             <label
               htmlFor="confirm"
-              className="text-sm font-medium text-[var(--ink-muted)]"
+              className="text-xs font-semibold text-[var(--ink-muted)]"
             >
               Confirm password
             </label>
@@ -151,10 +161,11 @@ export default function RegisterPage() {
               placeholder="Re-enter your password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
+              disabled={submitting}
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={submitting}>
+          <Button type="submit" variant="primary" className="w-full" disabled={submitting}>
             {submitting && (
               <Loader2
                 className="h-4 w-4"
@@ -162,20 +173,21 @@ export default function RegisterPage() {
                 aria-hidden
               />
             )}
-            Create account
+            <span>Register</span>
           </Button>
         </form>
 
-        <p className="text-center text-sm text-[var(--ink-faint)]">
+        <p className="text-center text-xs text-[var(--ink-faint)]">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors duration-150"
+            className="font-semibold text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors no-underline"
           >
-            Sign in
+            Sign in instead
           </Link>
         </p>
       </div>
     </main>
   );
 }
+export const dynamic = "force-dynamic";
