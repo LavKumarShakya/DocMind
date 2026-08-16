@@ -135,12 +135,16 @@ def test_demo_chat_uses_demo_pipeline(db_session, demo_mode, monkeypatch):
         document_ids=None,
         system_prompt_builder=None,
         fallback_answer=None,
+        retrieval_pipeline=None,
+        confidence_threshold=None,
     ):
         captured["question"] = question
         captured["user"] = user
         captured["document_ids"] = document_ids
         captured["system_prompt_builder"] = system_prompt_builder
         captured["fallback_answer"] = fallback_answer
+        captured["retrieval_pipeline"] = retrieval_pipeline
+        captured["confidence_threshold"] = confidence_threshold
         return rag_service.RagResult(answer="Demo answer", citations=[])
 
     monkeypatch.setattr(rag_service, "answer_question", fake_answer_question)
@@ -155,6 +159,8 @@ def test_demo_chat_uses_demo_pipeline(db_session, demo_mode, monkeypatch):
     assert captured["system_prompt_builder"] is build_demo_system_prompt
     assert captured["fallback_answer"] == DEMO_FALLBACK_ANSWER
     assert captured["user"].id == GUEST_USER_ID
+    assert captured["retrieval_pipeline"] is demo_service.retrieve_demo_evidence
+    assert captured["confidence_threshold"] == settings.DEMO_CONFIDENCE_THRESHOLD
 
 
 def test_demo_chat_llm_failure_returns_demo_fallback(db_session, demo_mode, monkeypatch):
@@ -190,6 +196,8 @@ def test_demo_chat_endpoint_returns_answer_and_citations(client, demo_mode, db_s
         document_ids=None,
         system_prompt_builder=None,
         fallback_answer=None,
+        retrieval_pipeline=None,
+        confidence_threshold=None,
     ):
         return rag_service.RagResult(
             answer="Answer about: " + question,
@@ -244,6 +252,92 @@ def test_build_demo_index_missing_pdf(db_session, demo_mode, monkeypatch):
     with pytest.raises(Exception) as excinfo:
         demo_service.build_demo_index(db_session)
     assert getattr(excinfo.value, "code", None) == "DEMO_DOCUMENT_MISSING"
+
+
+# ─── Lightweight demo retrieval (no embedding model, no reranker) ───
+
+
+def test_demo_retrieval_is_model_free(db_session, demo_mode):
+    """The demo query path must not touch the embedding or reranker services."""
+    demo_service.build_demo_index(db_session)
+
+    from app.services import embedding_service, reranking_service
+
+    # Make any accidental model access explode loudly during the demo query.
+    def _fail(*args, **kwargs):
+        raise AssertionError("embedding model must not load in DEMO_MODE")
+
+    def _fail_rerank(*args, **kwargs):
+        raise AssertionError("reranker must not load in DEMO_MODE")
+
+    embedding_service.set_embedding_service(
+        type("Boom", (), {"embed": _fail})()
+    )
+    reranking_service.set_reranking_service(
+        type("Boom", (), {"rerank": _fail_rerank})()
+    )
+
+    results = demo_service.retrieve_demo_evidence(
+        db_session, question="What were the retrieval recall and answer accuracy "
+        "of Hybrid with Reranking?", user=demo_service._demo_guest()
+    )
+
+    assert results
+    assert all(r.document_id == demo_service.DEMO_DOCUMENT_ID for r in results)
+    # Scores are TF-IDF cosine similarities, bounded to [0, 1].
+    assert all(0.0 <= (r.dense_score or 0.0) <= 1.0 for r in results)
+    # The relevant evidence (recall/accuracy numbers) is present in the results.
+    combined = " ".join(r.text.lower() for r in results)
+    assert "recall" in combined and "accuracy" in combined
+
+
+def test_demo_retrieval_rejects_irrelevant_questions(db_session, demo_mode):
+    demo_service.build_demo_index(db_session)
+    user = demo_service._demo_guest()
+
+    relevant = demo_service.retrieve_demo_evidence(
+        db_session, question="What was the retrieval recall of Hybrid plus Reranking?",
+        user=user,
+    )
+    irrelevant = demo_service.retrieve_demo_evidence(
+        db_session, question="What is the capital of France?", user=user,
+    )
+    assert relevant
+    # An irrelevant question yields no usable evidence: either an empty result
+    # or scores that stay below the demo confidence gate.
+    assert not irrelevant or max(r.dense_score or 0.0 for r in irrelevant) < settings.DEMO_CONFIDENCE_THRESHOLD
+    best_relevant = max(r.dense_score or 0.0 for r in relevant)
+    best_irrelevant = max(r.dense_score or 0.0 for r in irrelevant) if irrelevant else 0.0
+    assert best_relevant > best_irrelevant
+    assert best_relevant >= settings.DEMO_CONFIDENCE_THRESHOLD
+
+
+def test_demo_chat_uses_lightweight_retriever(db_session, demo_mode):
+    """End-to-end: answer_demo_question routes through the TF-IDF retriever and
+    never instantiates the embedding model or reranker."""
+    demo_service.build_demo_index(db_session)
+
+    from app.services import embedding_service, reranking_service
+
+    def _fail(*args, **kwargs):
+        raise AssertionError("embedding model must not load in DEMO_MODE")
+
+    def _fail_rerank(*args, **kwargs):
+        raise AssertionError("reranker must not load in DEMO_MODE")
+
+    embedding_service.set_embedding_service(type("Boom", (), {"embed": _fail})())
+    reranking_service.set_reranking_service(
+        type("Boom", (), {"rerank": _fail_rerank})()
+    )
+
+    result = demo_service.answer_demo_question(
+        db_session, question="What were the retrieval recall and answer accuracy "
+        "of Hybrid Retrieval with Reranking?"
+    )
+    # With the fake LLM echoing + "Sources: [1]", the evidence is confident and
+    # the demo answers instead of refusing.
+    assert "Sources" in result.answer
+    assert len(result.citations) == 1
 
 
 # ─── Upload gating in demo mode ───

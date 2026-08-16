@@ -37,6 +37,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(_: FastAPI):
     """Startup hook: in demo mode, surface index readiness without blocking."""
     if settings.DEMO_MODE:
+        logger.info("DEMO_MODE enabled: public demo is active (document=%r)", settings.DEMO_DOCUMENT_TITLE)
+        logger.info("Embedding model initialization skipped in DEMO_MODE")
         try:
             with SessionLocal() as db:
                 if demo_service.demo_index_ready(db):

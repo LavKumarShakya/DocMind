@@ -58,12 +58,23 @@ def answer_question(
     document_ids: list | None = None,
     system_prompt_builder=None,
     fallback_answer: str | None = None,
+    retrieval_pipeline=None,
+    confidence_threshold: float | None = None,
 ) -> RagResult:
     """Answer ``question`` for ``user`` from their visible documents.
 
     ``document_ids`` optionally restricts retrieval to specific documents
     (demo mode); ``system_prompt_builder`` and ``fallback_answer`` let demo
-    mode reuse this exact pipeline with demo-flavoured grounding. Defaults
+    mode reuse this exact pipeline with demo-flavoured grounding.
+
+    ``retrieval_pipeline`` bypasses the hybrid (dense + BM25 + reranker) path
+    entirely: when provided, it is called as ``retrieval_pipeline(db, question,
+    user)`` and its results are used directly. This is how demo mode runs a
+    lightweight lexical retriever over the prebuilt index without ever loading
+    the embedding model or the cross-encoder reranker.
+
+    ``confidence_threshold`` overrides the shared CONFIDENCE_THRESHOLD gate
+    (used by demo mode, whose scores are not reranker sigmoids). Defaults
     preserve the original behaviour exactly.
     """
     if len(question) > settings.MAX_MESSAGE_LENGTH:
@@ -78,14 +89,16 @@ def answer_question(
     fallback = fallback_answer or FALLBACK_ANSWER
     prompt_builder = system_prompt_builder or build_system_prompt
 
-    if document_ids:
+    if retrieval_pipeline is not None:
+        results = retrieval_pipeline(db, question, user)
+    elif document_ids:
         results = _retrieve(
             db, question, user, retrieval_service, document_ids=document_ids
         )
     else:
         results = _retrieve(db, question, user, retrieval_service)
 
-    if not results or not is_confident(results):
+    if not results or not is_confident(results, threshold=confidence_threshold):
         reason = "no evidence" if not results else "evidence below confidence threshold"
         logger.info("Not answering question (%s); returning grounded fallback", reason)
         return RagResult(answer=fallback)

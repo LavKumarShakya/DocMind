@@ -113,6 +113,12 @@ class Settings(BaseSettings):
     # root (so both ``backend/`` and the Docker container work directory find it).
     DEMO_DOCUMENT_PATH: str = "../Doc/DocMind_Public_Demo_Test_Document.pdf"
     DEMO_DOCUMENT_TITLE: str = "DocMind Public Demo Test Document"
+    # Demo-only confidence gate. The public demo never loads the embedding
+    # model or the cross-encoder reranker, so it cannot use the sigmoid
+    # reranker score that CONFIDENCE_THRESHOLD is calibrated for. Instead it
+    # gates on a pure-Python TF-IDF cosine similarity (bounded 0..1), which
+    # runs much smaller than a reranker score, hence the lower default.
+    DEMO_CONFIDENCE_THRESHOLD: float = 0.05
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

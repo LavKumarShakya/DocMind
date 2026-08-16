@@ -532,6 +532,7 @@ Gemini-backed chat endpoint, set `GEMINI_API_KEY` in the root `.env` (read by
 | `DEMO_DOCUMENT_PATH` | Path to the demo PDF. Absolute paths are used as-is; relative paths resolve against the backend working directory, walking up to the repo root (default `../Doc/DocMind_Public_Demo_Test_Document.pdf`). |
 | `DEMO_DOCUMENT_ID` | Fixed row id of the demo document (default `11111111-1111-4111-8111-111111111111`). Do not change after building the index. |
 | `DEMO_DOCUMENT_TITLE` | Display title of the demo document (default `DocMind Public Demo Test Document`). |
+| `DEMO_CONFIDENCE_THRESHOLD` | Demo-only confidence gate over the lightweight TF-IDF retrieval score (default `0.05`). Not used by the local/Docker pipeline. |
 | `NEXT_PUBLIC_API_URL` | Backend base URL baked into the frontend build (public, not a secret). |
 
 ---
@@ -543,9 +544,16 @@ without asking visitors to upload a PDF, parse it, or wait for indexing. When
 `DEMO_MODE=true`, the landing page becomes an unauthenticated chat UI anchored
 to a single **pre-indexed** demo document (`Doc/DocMind_Public_Demo_Test_Document.pdf`)
 with predefined example questions. The PDF is processed **once** at build time;
-every visitor question only runs query embedding + hybrid retrieval over the
-already-stored chunks (pgvector), so a public instance stays cheap on RAM and
-never re-reads, re-chunks or re-embeds the PDF per request.
+every visitor question only runs lightweight retrieval over the already-stored
+chunks, so a public instance stays cheap on RAM and never re-reads, re-chunks or
+re-embeds the PDF per request.
+
+> **Memory-safe demo.** The public demo **never loads the embedding model
+> (`BAAI/bge-base-en-v1.5`) or the cross-encoder reranker.** Query-time
+> retrieval is a pure-Python TF-IDF cosine search over the prebuilt demo chunks
+> (`retrieve_demo_evidence`), so the hosted process stays well under the Render
+> memory limit. The full embedding + hybrid + rerank pipeline remains available
+> for the local/Docker workflow (`DEMO_MODE=false`).
 
 ```
 Public demo                        Local / self-hosted
@@ -575,6 +583,13 @@ Answer + sources
   missing, `GET /api/demo/info` reports `status: "missing"` and
   `POST /api/demo/chat` returns a clear `503 DEMO_INDEX_MISSING` error instead
   of silently falling back to an empty store.
+- **Query-time retrieval is model-free.** Each visitor question is answered by
+  a lightweight TF-IDF cosine search over the stored demo chunks, then gated by
+  `DEMO_CONFIDENCE_THRESHOLD` before the LLM is called. The embedding model and
+  the cross-encoder reranker are **not** loaded in demo mode (only the build
+  tool loads the embedding model to produce the stored vectors). The preset
+  "Try asking" chips are real questions run through this same pipeline — they
+  are never hardcoded answers — and visitors may ask their own questions too.
 - **Upload is disabled while demo mode is on.** `POST /api/documents` (upload,
   process, version) returns `403 DEMO_MODE` so visitors cannot trigger arbitrary
   PDF processing. Set `DEMO_MODE=false` to restore the upload workflow.

@@ -3,9 +3,15 @@
 The demo PDF is processed exactly once by ``python -m scripts.build_demo_index``
 (which reads the PDF, extracts text, chunks it and stores pgvector embeddings in
 the database — the same persistent vector store used by normal ingestion). At
-runtime the demo path never re-reads the PDF, re-chunks or re-embeds it: every
-question only runs query embedding + hybrid retrieval over the already-stored
-chunks, so a public deployment stays cheap on RAM.
+runtime the demo path never re-reads the PDF, re-chunks or re-embeds it.
+
+Unlike the local/Docker RAG pipeline, the public demo never loads the embedding
+model (``BAAI/bge-base-en-v1.5``) or the cross-encoder reranker: query-time
+retrieval is a lightweight pure-Python TF-IDF cosine search over the already
+stored demo chunks (see ``retrieve_demo_evidence``). This keeps a hosted demo
+instance well under the memory limit while still supporting arbitrary
+visitor questions — the preset frontend chips are real questions, not hardcoded
+answer mappings.
 
 Retrieval is scoped to the demo document id (``DEMO_DOCUMENT_ID``) in SQL and
 permission filtering is unchanged (the demo document is PUBLIC, so the in-memory
@@ -16,6 +22,8 @@ clear server-side error instead of silently falling back to an empty store.
 from __future__ import annotations
 
 import logging
+import math
+import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -32,6 +40,8 @@ from app.rag.chunking import chunk_pages
 from app.rag.prompts import DEMO_FALLBACK_ANSWER, build_demo_system_prompt
 from app.services import pdf_service, rag_service, storage_service
 from app.services.citation_service import Citation
+from app.services.document_service import visible_condition
+from app.services.retrieval_types import RetrievalCandidate
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +117,127 @@ def demo_index_ready(db: Session) -> bool:
     if document is None or document.status != DocumentStatus.ACTIVE:
         return False
     return demo_chunk_count(db) > 0
+
+
+# ─── Lightweight demo retrieval (no embedding model, no reranker) ───
+
+# Tokens that carry no meaning for matching a demo question to an evidence
+# chunk. Kept deliberately small and generic so custom questions work too.
+_DEMO_STOPWORDS = frozenset(
+    {
+        "the", "and", "for", "that", "this", "with", "was", "were", "are",
+        "what", "how", "much", "many", "why", "which", "when", "who", "whom",
+        "whose", "did", "does", "do", "of", "a", "an", "is", "in", "on", "as",
+        "it", "at", "by", "be", "or", "if", "to", "its", "than", "from",
+        "about", "compared", "within", "acceptable", "limit", "latency",
+    }
+)
+
+_WORD_RE = re.compile(r"[a-z0-9]+")
+
+
+def _demo_tokens(text: str) -> list[str]:
+    """Lowercase alphanumeric word tokens with the stopword list applied."""
+    return [word for word in _WORD_RE.findall(text.lower()) if word not in _DEMO_STOPWORDS]
+
+
+def retrieve_demo_evidence(
+    db: Session,
+    question: str,
+    user: User,
+    *,
+    top_k: int = 5,
+) -> list[RetrievalCandidate]:
+    """Pure-Python TF-IDF cosine retrieval over the prebuilt demo chunks.
+
+    The stored pgvector embeddings are *not* used here (they are retained so
+    the build tool and the local/Docker path still work, but loading the model
+    to embed the query would defeat the whole point of a memory-safe public
+    demo). Instead the chunks' stored text is scored with TF-IDF cosine
+    similarity against the tokenized question — a fully offline, dependency-free
+    retriever that keeps the hosted demo process light.
+    """
+    query_tokens = _demo_tokens(question)
+    if not query_tokens:
+        return []
+
+    visibility = visible_condition(user)
+    rows = db.execute(
+        select(DocumentChunk, Document.title)
+        .join(Document, Document.id == DocumentChunk.document_id)
+        .where(
+            Document.status == DocumentStatus.ACTIVE,
+            visibility,
+            DocumentChunk.document_id == DEMO_DOCUMENT_ID,
+            DocumentChunk.searchable_content.isnot(None),
+        )
+        .order_by(DocumentChunk.chunk_index.asc())
+    ).all()
+
+    documents = [_demo_tokens(row[0].content) for row in rows]
+    titles = [row[1] for row in rows]
+    chunks = [row[0] for row in rows]
+    if not documents:
+        return []
+
+    n_docs = len(documents)
+    document_frequency: dict[str, int] = {}
+    for tokens in documents:
+        for term in set(tokens):
+            document_frequency[term] = document_frequency.get(term, 0) + 1
+    idf = {
+        term: math.log((n_docs + 1) / (df + 1)) + 1.0
+        for term, df in document_frequency.items()
+    }
+
+    document_vectors: list[dict[str, float]] = []
+    document_norms: list[float] = []
+    for tokens in documents:
+        term_frequency: dict[str, int] = {}
+        for term in tokens:
+            term_frequency[term] = term_frequency.get(term, 0) + 1
+        vector = {term: freq * idf.get(term, 0.0) for term, freq in term_frequency.items()}
+        norm = math.sqrt(sum(w * w for w in vector.values()))
+        document_vectors.append(vector)
+        document_norms.append(norm if norm else 1.0)
+
+    query_frequency: dict[str, int] = {}
+    for term in query_tokens:
+        query_frequency[term] = query_frequency.get(term, 0) + 1
+    query_vector = {term: freq * idf.get(term, 0.0) for term, freq in query_frequency.items()}
+    query_norm = math.sqrt(sum(w * w for w in query_vector.values()))
+    if query_norm == 0.0:
+        return []
+
+    scored: list[tuple[float, int]] = []
+    for index, vector in enumerate(document_vectors):
+        dot = sum(weight * vector.get(term, 0.0) for term, weight in query_vector.items())
+        similarity = dot / (query_norm * document_norms[index])
+        scored.append((similarity, index))
+    scored.sort(key=lambda item: item[1])
+    scored.sort(key=lambda item: item[0], reverse=True)
+
+    results: list[RetrievalCandidate] = []
+    for similarity, index in scored[:top_k]:
+        chunk = chunks[index]
+        results.append(
+            RetrievalCandidate(
+                chunk_id=chunk.id,
+                document_id=DEMO_DOCUMENT_ID,
+                document_title=titles[index],
+                page_number=chunk.page_number,
+                section=chunk.section,
+                chunk_index=chunk.chunk_index,
+                text=chunk.content,
+                dense_score=round(max(0.0, similarity), 6),
+                # The confidence gate (rag_service) falls back to the fused
+                # hybrid score when no reranker ran — which is always the case
+                # in demo mode. Carrying the TF-IDF similarity there lets the
+                # gate apply DEMO_CONFIDENCE_THRESHOLD without a reranker.
+                hybrid_score=round(max(0.0, similarity), 6),
+            )
+        )
+    return results
 
 
 def build_demo_index(db: Session, *, embedding_service=None) -> Document:
@@ -241,9 +372,12 @@ def build_demo_index(db: Session, *, embedding_service=None) -> Document:
 def answer_demo_question(db: Session, *, question: str) -> DemoAnswer:
     """Run the shared RAG pipeline over the demo document only.
 
-    The LLM is only called when retrieval evidence clears the confidence gate;
-    otherwise the demo fallback (grounded refusal) is returned so the demo
-    never hallucinates from general knowledge.
+    Retrieval uses the lightweight, model-free TF-IDF search over the prebuilt
+    demo index (``retrieve_demo_evidence``), so the embedding model and the
+    reranker are never loaded in demo mode. The LLM is only called when the
+    retrieval evidence clears the demo confidence gate; otherwise the demo
+    fallback (grounded refusal) is returned so the demo never hallucinates from
+    general knowledge.
     """
     if not question.strip():
         raise ApiError("MESSAGE_EMPTY", "Message must not be empty.", status_code=422)
@@ -265,6 +399,8 @@ def answer_demo_question(db: Session, *, question: str) -> DemoAnswer:
             document_ids=[DEMO_DOCUMENT_ID],
             system_prompt_builder=build_demo_system_prompt,
             fallback_answer=DEMO_FALLBACK_ANSWER,
+            retrieval_pipeline=retrieve_demo_evidence,
+            confidence_threshold=settings.DEMO_CONFIDENCE_THRESHOLD,
         )
     except ApiError:
         raise
