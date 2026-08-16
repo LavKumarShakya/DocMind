@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FileText,
@@ -44,6 +45,7 @@ import {
   uploadVersion,
 } from "@/lib/documents";
 import { submitFeedback } from "@/lib/feedback";
+import { useDemoMode } from "@/lib/use-demo-mode";
 import { cn } from "@/lib/utils";
 
 /* ─── Status Badge ─── */
@@ -436,6 +438,7 @@ function VersionHistory({ docId }: { docId: string }) {
 
 function DashboardShell() {
   const { user } = useAuth();
+  const { isDemo } = useDemoMode();
 
   const [documents, setDocuments] = useState<CampusDocument[]>([]);
   const [listState, setListState] = useState<"loading" | "ready" | "error">(
@@ -617,6 +620,32 @@ function DashboardShell() {
     } finally {
       setAsking(false);
     }
+  }
+
+  if (isDemo) {
+    // Public demo mode: the authenticated dashboard RAG endpoints (chat,
+    // search, documents) are disabled server-side (403 DEMO_MODE). Route
+    // visitors to the public demo instead of calling /api/chat.
+    return (
+      <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
+        <SiteHeader />
+        <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-6 py-16 text-center">
+          <h1
+            className="text-2xl text-[var(--ink)]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Public demo active
+          </h1>
+          <p className="mt-3 text-sm text-[var(--ink-muted)] leading-relaxed">
+            The document dashboard is disabled while the public demo is live.
+            Ask questions about the demo document instead.
+          </p>
+          <Link href="/" className="mt-6">
+            <Button variant="accent">Open the public demo</Button>
+          </Link>
+        </main>
+      </div>
+    );
   }
 
   return (
