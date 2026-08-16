@@ -1,0 +1,38 @@
+{
+  "document": {
+    "title": "DocMind Public Demo Test Document",
+    "description": "Pre-indexed document used by the public DocMind demo.",
+    "status": "ACTIVE",
+    "access_level": "PUBLIC",
+    "original_filename": "DocMind_Public_Demo_Test_Document.pdf",
+    "mime_type": "application/pdf",
+    "file_size": 4306,
+    "page_count": 2
+  },
+  "chunks": [
+    {
+      "chunk_index": 0,
+      "page_number": 1,
+      "section": null,
+      "content": "DocMind — Public Demo Test Document\nA self-contained document for demonstrating PDF question answering, retrieval, multi-hop reasoning, and\nnumerical extraction.\n1. Project Overview\nDocMind is a Retrieval-Augmented Generation (RAG) document assistant designed to answer questions\nfrom uploaded documents. For the public demo, a pre-indexed demonstration document is used so visitors\ncan ask questions without uploading or processing a new PDF on the hosted backend.\n2. Demonstration Project: Aurora Analytics\nAurora Analytics conducted a six-week evaluation of its internal document-search assistant. The evaluation\ncompared three retrieval configurations: Baseline Search, Hybrid Retrieval, and Hybrid Retrieval with\nReranking. The goal was to determine whether combining keyword and semantic retrieval could improve\nanswer quality while keeping response latency acceptable.\n3. Evaluation Setup\nThe evaluation used 1,200 questions created from a collection of 300 internal documents. Each configurat"
+    },
+    {
+      "chunk_index": 1,
+      "page_number": 1,
+      "section": null,
+      "content": "ponse latency acceptable.\n3. Evaluation Setup\nThe evaluation used 1,200 questions created from a collection of 300 internal documents. Each configuration\nwas tested against the same question set. The team measured retrieval recall, answer accuracy, and median\nresponse latency. A successful answer was defined as one that contained the required information and did\nnot contradict the source document.\nConfiguration\nRetrieval Recall\nAnswer Accuracy\nMedian Latency\nBaseline Search\n71%\n68%\n1.4 s\nHybrid Retrieval\n84%\n79%\n1.8 s\nHybrid + Reranking\n91%\n87%\n2.3 s\n4. Key Findings\n• Hybrid Retrieval improved retrieval recall from 71% to 84%, a gain of 13 percentage points over Baseline\nSearch.\n• Hybrid Retrieval with Reranking achieved the highest retrieval recall at 91% and the highest answer\naccuracy at 87%.\n• The reranked configuration increased median latency to 2.3 seconds, which was 0.5 seconds slower than\nHybrid Retrieval without reranking.\n• The team considered 2.5 seconds an acceptable media"
+    },
+    {
+      "chunk_index": 2,
+      "page_number": 1,
+      "section": null,
+      "content": "an latency to 2.3 seconds, which was 0.5 seconds slower than\nHybrid Retrieval without reranking.\n• The team considered 2.5 seconds an acceptable median latency for the internal use case.\n• The evaluation suggested that the additional latency from reranking was justified by the improvement in\nanswer quality.\n5. Implementation Notes\nThe demonstration system stores pre-processed document chunks and their vector representations before\ndeployment. During a user query, the system retrieves the most relevant chunks and passes them to the\nlanguage model as context. This reduces server-side work during the public demo because PDF parsing,\nchunking, and indexing do not happen for every visitor.\n6. Conclusion"
+    },
+    {
+      "chunk_index": 3,
+      "page_number": 2,
+      "section": null,
+      "content": "For the Aurora Analytics evaluation, Hybrid Retrieval with Reranking provided the strongest overall retrieval\nand answer-quality results. Although it introduced additional latency, the 2.3-second median remained within\nthe team's 2.5-second target. The results support using reranking when answer quality is more important\nthan minimizing latency."
+    }
+  ]
+}

@@ -21,6 +21,7 @@ clear server-side error instead of silently falling back to an empty store.
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import re
@@ -58,6 +59,14 @@ _DEMO_INDEX_MISSING_MESSAGE = (
     "Run `python -m scripts.build_demo_index` from the backend directory "
     "(see the README 'Public demo mode' section)."
 )
+
+# Static, versioned seed of the already-generated demo document (Document +
+# DocumentChunk rows). Imported at startup in DEMO_MODE so the hosted
+# PostgreSQL gets the exact same demo data as local, without running the
+# embedding model (BGE) or ``build_demo_index`` on the production box. The
+# demo retrieval path only needs the chunk text (TF-IDF), so the stored
+# pgvector ``embedding`` is intentionally left NULL.
+_DEMO_SEED_PATH = Path(__file__).resolve().parents[1] / "data" / "demo_seed.json"
 
 
 @dataclass(frozen=True)
@@ -117,6 +126,100 @@ def demo_index_ready(db: Session) -> bool:
     if document is None or document.status != DocumentStatus.ACTIVE:
         return False
     return demo_chunk_count(db) > 0
+
+
+def _load_demo_seed() -> dict:
+    """Read the static demo seed artifact from disk.
+
+    The artifact contains the already-generated demo document metadata and its
+    chunk text (no embeddings). It is committed to the repository and shipped
+    in the production image so every deployment seeds identical demo data.
+    """
+    if not _DEMO_SEED_PATH.is_file():
+        raise ApiError(
+            "DEMO_SEED_MISSING",
+            f"Demo seed artifact not found at {_DEMO_SEED_PATH}.",
+            status_code=500,
+        )
+    with _DEMO_SEED_PATH.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def seed_demo_index(db: Session) -> bool:
+    """Import the prebuilt demo index into the database (model-free, idempotent).
+
+    Creates the demo ``Document`` and its ``DocumentChunk`` rows from the
+    committed seed artifact when the demo index is not already present. This is
+    the production-safe alternative to ``build_demo_index``: it never reads the
+    PDF, never chunks, and never runs the embedding model or reranker (chunk
+    embeddings are left NULL, which the TF-IDF demo retriever does not use).
+
+    Returns True when a seed was applied, False when the index was already
+    ready (no-op).
+    """
+    if demo_index_ready(db):
+        return False
+
+    seed = _load_demo_seed()
+    document_data = seed["document"]
+
+    document = get_demo_document(db)
+    if document is None:
+        document = Document(
+            id=DEMO_DOCUMENT_ID,
+            title=document_data["title"],
+            description=document_data.get("description"),
+            status=DocumentStatus[document_data["status"]],
+            access_level=AccessLevel[document_data["access_level"]],
+            file_path=f"documents/{DEMO_DOCUMENT_ID}/original.pdf",
+            original_filename=document_data["original_filename"],
+            mime_type=document_data["mime_type"],
+            file_size=int(document_data["file_size"]),
+            page_count=int(document_data.get("page_count") or 0),
+            uploaded_by=None,
+        )
+        db.add(document)
+        db.flush()
+        version = DocumentVersion(
+            document_id=document.id,
+            version_number=1,
+            status=DocumentStatus.ACTIVE,
+            filename=document_data["original_filename"],
+            storage_path=f"documents/{DEMO_DOCUMENT_ID}/original.pdf",
+            file_size=int(document_data["file_size"]),
+        )
+        db.add(version)
+        db.flush()
+        document.current_version_id = version.id
+    else:
+        document.status = DocumentStatus[document_data["status"]]
+        document.access_level = AccessLevel[document_data["access_level"]]
+        document.page_count = int(document_data.get("page_count") or document.page_count or 0)
+
+    for chunk_data in seed["chunks"]:
+        db.add(
+            DocumentChunk(
+                document_id=DEMO_DOCUMENT_ID,
+                content=chunk_data["content"],
+                embedding=None,
+                page_number=chunk_data.get("page_number"),
+                chunk_index=int(chunk_data["chunk_index"]),
+                metadata_={
+                    "document_id": str(DEMO_DOCUMENT_ID),
+                    "page_number": chunk_data.get("page_number"),
+                    "chunk_index": int(chunk_data["chunk_index"]),
+                },
+            )
+        )
+
+    db.add(document)
+    db.commit()
+    logger.info(
+        "Seeded demo index from static artifact: %d chunks (%s)",
+        len(seed["chunks"]),
+        document_data["title"],
+    )
+    return True
 
 
 # ─── Lightweight demo retrieval (no embedding model, no reranker) ───

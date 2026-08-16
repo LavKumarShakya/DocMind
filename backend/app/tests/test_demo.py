@@ -255,6 +255,65 @@ def test_build_demo_index_missing_pdf(db_session, demo_mode, monkeypatch):
     assert getattr(excinfo.value, "code", None) == "DEMO_DOCUMENT_MISSING"
 
 
+# ─── Production seed (static artifact import, model-free) ───
+
+
+def _fail_rerank(*args, **kwargs):
+    raise AssertionError("reranker must not load during seed")
+
+
+def test_seed_demo_index_imports_ready_document(db_session, demo_mode):
+    assert not demo_service.demo_index_ready(db_session)
+
+    applied = demo_service.seed_demo_index(db_session)
+
+    assert applied is True
+    assert demo_service.demo_index_ready(db_session)
+    document = demo_service.get_demo_document(db_session)
+    assert document.status == DocumentStatus.ACTIVE
+    assert document.access_level == AccessLevel.PUBLIC
+    assert document.page_count == 2
+    assert demo_service.demo_chunk_count(db_session) == 4
+
+    # Chunks hold the real demo text (TF-IDF retrievable) and no embeddings.
+    from sqlalchemy import select
+
+    contents = " ".join(
+        db_session.scalars(
+            select(DocumentChunk.content).where(
+                DocumentChunk.document_id == demo_service.DEMO_DOCUMENT_ID
+            )
+        ).all()
+    )
+    assert "Aurora Analytics" in contents
+    assert "91%" in contents
+
+
+def test_seed_demo_index_is_idempotent(db_session, demo_mode):
+    assert demo_service.seed_demo_index(db_session) is True
+    count = demo_service.demo_chunk_count(db_session)
+
+    assert demo_service.seed_demo_index(db_session) is False
+    assert demo_service.demo_chunk_count(db_session) == count
+    assert demo_service.demo_index_ready(db_session)
+
+
+def test_seed_demo_index_is_model_free(db_session, demo_mode):
+    """Seeding must not import or instantiate the heavy ML libraries."""
+    from app.services import embedding_service, reranking_service
+
+    def _fail(*args, **kwargs):
+        raise AssertionError("embedding model must not load during seed")
+
+    embedding_service.set_embedding_service(type("Boom", (), {"embed": _fail})())
+    reranking_service.set_reranking_service(
+        type("Boom", (), {"rerank": _fail_rerank})()
+    )
+
+    demo_service.seed_demo_index(db_session)
+    assert demo_service.demo_index_ready(db_session)
+
+
 # ─── Lightweight demo retrieval (no embedding model, no reranker) ───
 
 

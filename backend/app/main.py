@@ -89,11 +89,26 @@ async def lifespan(_: FastAPI):
                         demo_service.demo_chunk_count(db),
                     )
                 else:
-                    logger.warning(
-                        "Demo mode active but the demo index is MISSING. "
-                        "Run `python -m scripts.build_demo_index` from the "
-                        "backend directory before serving visitors."
-                    )
+                    # Production-safe seed: import the committed demo index
+                    # (Document + chunk text) without the embedding model,
+                    # reranker or build_demo_index.
+                    try:
+                        demo_service.seed_demo_index(db)
+                    except Exception:  # noqa: BLE001 - startup must not crash
+                        logger.exception("Could not seed the demo index at startup")
+                    if demo_service.demo_index_ready(db):
+                        logger.info(
+                            "Seeded demo index from static artifact: ready "
+                            "(title=%r, chunks=%d)",
+                            settings.DEMO_DOCUMENT_TITLE,
+                            demo_service.demo_chunk_count(db),
+                        )
+                    else:
+                        logger.warning(
+                            "Demo mode active but the demo index is MISSING. "
+                            "Run `python -m scripts.build_demo_index` from the "
+                            "backend directory before serving visitors."
+                        )
         except Exception:  # pragma: no cover - startup must not crash the app
             logger.exception("Could not inspect demo index during startup")
     yield
