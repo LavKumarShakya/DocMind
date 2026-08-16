@@ -38,7 +38,7 @@ export function SiteHeader() {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
             <BookOpen className="h-4 w-4" aria-hidden />
           </span>
-          CampusRAG
+          DocMind
         </Link>
 
         <nav className="hidden items-center gap-1 text-sm sm:flex" aria-label="Main">

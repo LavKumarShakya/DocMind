@@ -108,7 +108,7 @@ export default function Home() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
               <BookOpen className="h-4 w-4" aria-hidden />
             </span>
-            CampusRAG
+            DocMind
           </div>
 
           {status === "loading" ? null : user ? (
@@ -137,7 +137,7 @@ export default function Home() {
 
       <section className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-lg space-y-6 text-center">
-          <h1 className="text-4xl font-semibold tracking-tight">CampusRAG</h1>
+          <h1 className="text-4xl font-semibold tracking-tight">DocMind</h1>
           <p className="text-zinc-600">
             University knowledge retrieval and question-answering platform.
           </p>

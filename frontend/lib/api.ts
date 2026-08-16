@@ -1,5 +1,5 @@
 /**
- * API client for the CampusRAG backend.
+ * API client for the DocMind backend.
  *
  * `NEXT_PUBLIC_API_URL` is baked in at build time and is safe to expose to the
  * browser — it is just the base URL of the public API and contains no secrets.
