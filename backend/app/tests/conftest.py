@@ -6,6 +6,7 @@ which is kept in sync with the ORM models by ``alembic check``.
 """
 
 import os
+import sys
 import uuid
 
 import pytest
@@ -24,6 +25,22 @@ TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
     settings.DATABASE_URL.rsplit("/", 1)[0] + "/docmind_test",
 )
+
+
+@pytest.fixture(scope="session")
+def app_import_guard():
+    """Snapshot whether the heavy ML modules were pulled in by app import.
+
+    ``app.main`` is imported at module load (above), so by the time this fixture
+    runs the full application import graph has already executed. If the demo is
+    truly model-free, ``sentence_transformers`` and ``torch`` must NOT be in
+    ``sys.modules`` — this is the hard guarantee the fixture asserts on.
+    """
+    return {
+        "st_loaded": "sentence_transformers" in sys.modules,
+        "torch_loaded": "torch" in sys.modules,
+    }
+
 def _ensure_test_database() -> None:
     """Create the test database if it does not exist."""
     base_url = settings.DATABASE_URL.rsplit("/", 1)[0] + "/postgres"

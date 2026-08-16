@@ -38,6 +38,12 @@ class RerankingService:
         if self._model is None:
             with self._lock:
                 if self._model is None:
+                    if settings.DEMO_MODE:
+                        raise RuntimeError(
+                            "Reranker (cross-encoder) initialization is forbidden in "
+                            "DEMO_MODE. The public demo is model-free by design; do "
+                            "not call the reranking service while DEMO_MODE=true."
+                        )
                     try:
                         from sentence_transformers import CrossEncoder
                     except ImportError as exc:  # pragma: no cover - dependency is required

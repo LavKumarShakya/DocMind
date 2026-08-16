@@ -28,10 +28,29 @@ from app.schemas.chat import (
     UserSearchResult,
 )
 from app.services import conversation_service, rag_service
+from app.core.config import settings
+from app.core.errors import ApiError
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["rag"])
+
+
+def _require_full_rag() -> None:
+    """Block the authenticated hybrid-RAG endpoints while the public demo is live.
+
+    These endpoints run the full dense + BM25 + rerank pipeline, which loads the
+    embedding model and the cross-encoder reranker. That must never happen on the
+    Render public demo, so they are disabled when DEMO_MODE=true (visitors use the
+    model-free demo endpoints instead).
+    """
+    if settings.DEMO_MODE:
+        raise ApiError(
+            "DEMO_MODE",
+            "Authenticated RAG chat/search are disabled in demo mode. "
+            "Use the public demo endpoints or set DEMO_MODE=false.",
+            status_code=403,
+        )
 
 
 def _citations(result) -> list[CitationResponse]:
@@ -54,6 +73,7 @@ def chat(
     deterministic title from the question) when ``conversation_id`` is omitted,
     otherwise the exchange is appended to the caller's conversation.
     """
+    _require_full_rag()
     if payload.conversation_id is None:
         conversation = conversation_service.create_conversation(
             db,
@@ -121,6 +141,7 @@ def search(
     Each result exposes the per-stage scores: dense_score, bm25_score,
     hybrid_score and rerank_score (see SearchResult for exact semantics).
     """
+    _require_full_rag()
     results = rag_service.search_documents(db, query=payload.query, user=current_user)
     return SearchResponse(results=[_search_result(r) for r in results])
 
@@ -141,6 +162,7 @@ def user_search(
     indicator only — raw scores, vector values and chunk ids are never exposed
     here (they remain available on the developer endpoint above).
     """
+    _require_full_rag()
     results = rag_service.search_documents(db, query=payload.query, user=current_user)
     return UserSearchResponse(
         results=[

@@ -5,6 +5,7 @@ orchestration stubbed so no model or network is needed), while index building
 runs against the real demo PDF with the deterministic fake embedding service.
 """
 
+import sys
 import uuid
 
 import pytest
@@ -350,5 +351,85 @@ def test_upload_blocked_in_demo_mode(client, demo_mode, user):
         headers=auth_headers(user),
         files=multipart_file(content, "visitor.pdf"),
     )
+    assert res.status_code == 403
+    assert res.json()["error"]["code"] == "DEMO_MODE"
+
+
+# ─── Model-free guarantee (hard regression guards) ───
+
+
+def _heavy_modules_loaded() -> list[str]:
+    """Names of the heavyweight ML modules currently imported, if any."""
+    loaded = []
+    for name in ("sentence_transformers", "torch"):
+        if name in sys.modules:
+            loaded.append(name)
+    return loaded
+
+
+def test_demo_mode_never_imports_heavy_modules(app_import_guard):
+    """Importing the full application in DEMO_MODE must not pull in the heavy libs.
+
+    ``app_import_guard`` guarantees the app is imported under DEMO_MODE and
+    verifies ``sentence_transformers`` / ``torch`` are absent from sys.modules.
+    """
+    assert app_import_guard["st_loaded"] is False, "sentence_transformers imported!"
+    assert app_import_guard["torch_loaded"] is False, "torch imported!"
+
+
+def test_demo_query_never_imports_heavy_modules(
+    db_session, demo_mode, monkeypatch, app_import_guard
+):
+    """A real demo query must not import or instantiate the heavy ML libraries.
+
+    This covers the full startup + demo-query path (through rag_service), not
+    just a direct call to the retriever. The embedding and reranker services are
+    replaced with fakes that explode if their model is ever accessed, and the
+    heavy modules are asserted absent from sys.modules before and after.
+    """
+    demo_service.build_demo_index(db_session)
+
+    from app.services import embedding_service, reranking_service
+
+    def _fail(*args, **kwargs):
+        raise AssertionError("embedding model must not load in DEMO_MODE")
+
+    def _fail_rerank(*args, **kwargs):
+        raise AssertionError("reranker must not load in DEMO_MODE")
+
+    embedding_service.set_embedding_service(type("Boom", (), {"embed": _fail})())
+    reranking_service.set_reranking_service(
+        type("Boom", (), {"rerank": _fail_rerank})()
+    )
+
+    before = _heavy_modules_loaded()
+    result = demo_service.answer_demo_question(
+        db_session, question="What were the retrieval recall and answer accuracy "
+        "of Hybrid Retrieval with Reranking?"
+    )
+    after = _heavy_modules_loaded()
+
+    assert result.citations, "demo query should produce grounded, cited evidence"
+    assert before == [], f"heavy modules imported before query: {before}"
+    assert after == [], f"heavy modules imported after query: {after}"
+
+
+def test_authenticated_rag_endpoints_blocked_in_demo_mode(client, demo_mode, user):
+    """The authenticated hybrid-RAG endpoints must not be callable in demo mode.
+
+    These endpoints would otherwise load the embedding model and reranker via the
+    full hybrid pipeline; they must be disabled so the demo process stays
+    model-free on Render.
+    """
+    headers = auth_headers(user)
+    res = client.post("/api/chat", headers=headers, json={"message": "hello"})
+    assert res.status_code == 403
+    assert res.json()["error"]["code"] == "DEMO_MODE"
+
+    res = client.post("/api/search", headers=headers, json={"query": "hello"})
+    assert res.status_code == 403
+    assert res.json()["error"]["code"] == "DEMO_MODE"
+
+    res = client.post("/api/search/results", headers=headers, json={"query": "hello"})
     assert res.status_code == 403
     assert res.json()["error"]["code"] == "DEMO_MODE"

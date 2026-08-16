@@ -11,9 +11,12 @@ never downloads models.
 
 from __future__ import annotations
 
+import logging
 import threading
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class EmbeddingService:
@@ -31,6 +34,20 @@ class EmbeddingService:
         if self._model is None:
             with self._lock:
                 if self._model is None:
+                    if settings.DEMO_MODE:
+                        import traceback
+
+                        logger.error(
+                            "[DEMO_GUARD] DEMO_MODE=%s — embedding model initialization "
+                            "requested and BLOCKED. Caller:\n%s",
+                            settings.DEMO_MODE,
+                            "".join(traceback.format_stack()[:-1]),
+                        )
+                        raise RuntimeError(
+                            "Embedding model initialization is forbidden in DEMO_MODE. "
+                            "The public demo is model-free by design; do not call the "
+                            "embedding service while DEMO_MODE=true."
+                        )
                     try:
                         from sentence_transformers import SentenceTransformer
                     except ImportError as exc:  # pragma: no cover - dependency is required
